@@ -24,14 +24,37 @@ API
 
 State:
 * /world/setup
-* /world/state
+* /world/state[/x/y/w/h]
 * /world/step[/{counts}]
  
 Persistance:
 * /world/save
-* /world/load
+* /world/load/{what}
 
-Solutions
+Possible solutions
 ========
 
-In progress...
+* virtual memory pages mapping
+* compression
+* (x, y) coord per point
+
+Possible optimizations
+========
+
+* hashlife
+* cache on quad tree nodes
+
+Implementation
+========
+
+* virtual memory pages 2^n
+* views: pages hashed / quad tree view (coords? origin)
+* world ticker bitwised, 3 bit per life
+* save / load rle???
+* data compression
+
+Future scalability options
+========
+
+* quad trees
+* supervised router
