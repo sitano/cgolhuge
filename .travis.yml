@@ -1,0 +1,13 @@
+language: go
+
+go:
+  - 1.2
+  - tip
+
+script:
+  - go test ./...
+  - make
+
+install:
+  - go get github.com/sitano/cgolhuge
+  - go get -v ./...
