@@ -4,7 +4,7 @@ Conway's Game of Life demo
 This is demo solution of Conway's game of life problem simulated in a huge world.
 
 [![Build Status](https://travis-ci.org/sitano/cgolhuge.png)](https://travis-ci.org/sitano/cgolhuge)
-[![wercker status](https://app.wercker.com/status/{code} "wercker status")](https://app.wercker.com/project/sitano/{code})
+[![wercker status](https://app.wercker.com/status/91da64038f15c8fd4fdc8acca0101828/s/ "wercker status")](https://app.wercker.com/project/bykey/91da64038f15c8fd4fdc8acca0101828)
 
 ## Features
 
