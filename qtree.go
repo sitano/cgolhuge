@@ -38,6 +38,13 @@ func Max(x int64, y int64) int64 {
 	return y
 }
 
+func Abs(x int64) uint64 {
+	if x >= 0 {
+		return uint64(x)
+	}
+	return uint64(-1 * x)
+}
+
 func NewAABB(xa, xb, ya, yb int64) AABB {
 	return AABB{ Min(xa, xb), Max(xa, xb), Min(ya, yb), Max(ya, yb) }
 }
@@ -48,11 +55,11 @@ func (b AABB) getAABB() AABB {
 }
 
 func (b AABB) SizeX() uint64 {
-	return uint64(b.MaxX - b.MinX)
+	return Abs(b.MaxX - b.MinX)
 }
 
 func (b AABB) SizeY() uint64 {
-	return uint64(b.MaxY - b.MinY)
+	return Abs(b.MaxY - b.MinY)
 }
 
 // Returns true if o intersects this

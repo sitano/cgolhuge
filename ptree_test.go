@@ -30,6 +30,7 @@ func TestNewPageTree(t *testing.T) {
 
 func TestOFInt64(t *testing.T) {
 	fmt.Printf("MinInt64 = %d\n", math.MinInt64)
+	// OF: fmt.Printf("-1 * MinInt64 = %d\n", math.MinInt64 * -1)
 	fmt.Printf("MaxInt64 = %d\n", math.MaxInt64)
 	fmt.Printf("+ = %d\n", uint64(-1 * math.MinInt64) + uint64(math.MaxInt64))
 	// OF: fmt.Printf("1 + = %x\n", uint64(-1 * math.MinInt64) + uint64(math.MaxInt64) + uint64(1))

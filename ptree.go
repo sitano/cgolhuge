@@ -144,3 +144,15 @@ func (tile *QuadTile) remove(px int64, py int64, qbox AABB) bool {
 
 	return false
 }
+
+func (pb *PageTree) MaxPagesX() uint64 {
+	bbox := pb.getAABB()
+	ws := uint64(pb.wsize)
+	return Abs(bbox.MinX) / ws + Abs(bbox.MaxX) / ws
+}
+
+func (pb *PageTree) MaxPagesY() uint64 {
+	bbox := pb.getAABB()
+	ws := uint64(pb.wsize)
+	return Abs(bbox.MinY) / ws + Abs(bbox.MaxY) / ws
+}
