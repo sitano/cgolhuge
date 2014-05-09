@@ -56,8 +56,21 @@ func (pb *PageTree) Add(pt *PageTile) {
 	(*QuadTree)(pb).Add(pt)
 }
 
-func (pb *PageTree) Remove(pt *PageTile) {
-	panic("Not implemented")
+func (pb *PageTree) Remove(pt *PageTile) bool {
+	if pb.root.remove(pt.px, pt.py, pt.AABB) {
+		pb.count --
+		return true
+	}
+	return false
+}
+
+// TODO: put wsize into Tree str
+func (pb *PageTree) RemovePXY(px int64, py int64, wsize uint) bool {
+	if pb.root.remove(px, py, NewAABBPXY(px, py, wsize)) {
+		pb.count --
+		return true
+	}
+	return false
 }
 
 func (pb *PageTree) Count() uint64 {
@@ -95,4 +108,32 @@ func (tile *QuadTile) queryPage(px int64, py int64, qbox AABB) *PageTile {
 	}
 
 	return nil
+}
+
+func (tile *QuadTile) remove(px int64, py int64, qbox AABB) bool {
+	// end recursion if this tile does not intersect the query range
+	if ! tile.Intersects(qbox) {
+		return false
+	}
+
+	// return candidates at this tile
+	for i, v := range tile.contents {
+		p := v.(*PageTile)
+		if p.px == px && p.py == py {
+			tile.contents[i] = tile.contents[len(tile.contents)-1]
+			tile.contents = tile.contents[0:len(tile.contents)-1]
+			// TODO: merge parent tree node childs if can, but i dont need it RN
+			return true
+		}
+	}
+
+	// recurse into childs (if any)
+	if tile.childs[_TOPRIGHT] != nil {
+		for _, child := range tile.childs {
+			ret := child.remove(px, py, qbox)
+			if ret { return ret }
+		}
+	}
+
+	return false
 }

@@ -62,13 +62,11 @@ func TestAddPage(t *testing.T) {
 	if pb.Count() != 2 { t.Error("Pages count in a tree must be 2") }
 }
 
-func TestPageTreeSearchPage(t *testing.T) {
-	vm := NewVM(KSIZE_16K)
-	p := vm.ReservePage()
+func fillPageTree(t *testing.T, vm *VM) PageTree {
 	pb := NewPageTree(NewAABB(-128 * 21, 128 * 21, 128 * 21, -128 * 21))
 	for x := int64(-20) ; x <= 20; x ++ {
 		for y := int64(-20) ; y <= 20 ; y++ {
-			pt := NewPageTile(p, vm.PageWidth(), x, y)
+			pt := NewPageTile(vm.ReservePage(), vm.PageWidth(), x, y)
 			if ! pt.Intersects(pb.getAABB()) {
 				t.Error("This tile ", pt, " does not intersect whole tree ", pb)
 			}
@@ -76,13 +74,44 @@ func TestPageTreeSearchPage(t *testing.T) {
 		}
 	}
 	if pb.Count() != 41 * 41 { t.Error("Tree have invalid size after fill ", pb.Count()) }
+	return pb
+}
+
+func TestPageTreeSearchPage(t *testing.T) {
+	vm := NewVM(KSIZE_16K)
+	pb := fillPageTree(t, &vm)
 	for x := int64(-20) ; x <= 20; x ++ {
 		for y := int64(-20) ; y <= 20 ; y++ {
 			q := pb.QueryPage(x, y, vm.wsize)
 			if q == nil {
 				t.Error("Can't query page at pos ", x, "x", y)
 			}
+			if q.px != x || q.py != y {
+				t.Error("Query ret another page ", q)
+			}
 		}
 	}
+}
 
+func TestPageRemove(t *testing.T) {
+	vm := NewVM(KSIZE_16K)
+	pb := fillPageTree(t, &vm)
+	for x := int64(-20) ; x <= 20; x ++ {
+		for y := int64(-20) ; y <= 20 ; y++ {
+			if ! pb.RemovePXY(x, y, vm.wsize) {
+				t.Error("Can't remove page at pos ", x, "x", y)
+			}
+		}
+	}
+	if pb.Count() != 0 {
+		t.Error("Tree must be empty rn")
+	}
+	for x := int64(-20) ; x <= 20; x ++ {
+		for y := int64(-20) ; y <= 20 ; y++ {
+			q := pb.QueryPage(x, y, vm.wsize)
+			if q != nil {
+				t.Error("Query page after empty at pos ", x, "x", y)
+			}
+		}
+	}
 }
