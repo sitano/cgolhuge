@@ -47,12 +47,12 @@ func (b AABB) getAABB() AABB {
 	return b
 }
 
-func (b AABB) SizeX() int64 {
-	return b.MaxX - b.MinX
+func (b AABB) SizeX() uint64 {
+	return uint64(b.MaxX - b.MinX)
 }
 
-func (b AABB) SizeY() int64 {
-	return b.MaxY - b.MinY
+func (b AABB) SizeY() uint64 {
+	return uint64(b.MaxY - b.MinY)
 }
 
 // Returns true if o intersects this

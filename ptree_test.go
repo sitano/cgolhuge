@@ -1,6 +1,8 @@
 package main
 
 import "testing"
+import "math"
+import "fmt"
 
 func TestWtoP(t *testing.T) {
 	if WtoP(0, 128) != 0 { t.Error("Invalid WtoP coord at 0 / 128") }
@@ -23,14 +25,34 @@ func TestPtoW(t *testing.T) {
 }
 
 func TestNewPageTree(t *testing.T) {
-	NewPageTree(NewAABB(-128, 128, 128, -128))
+	NewPageTree(NewAABB(-128, 128, 128, -128), 128)
+}
+
+func TestOFInt64(t *testing.T) {
+	fmt.Printf("MinInt64 = %d\n", math.MinInt64)
+	fmt.Printf("MaxInt64 = %d\n", math.MaxInt64)
+	fmt.Printf("+ = %d\n", uint64(-1 * math.MinInt64) + uint64(math.MaxInt64))
+	// OF: fmt.Printf("1 + = %x\n", uint64(-1 * math.MinInt64) + uint64(math.MaxInt64) + uint64(1))
+}
+
+func TestNewPageTreeMaxInt64(t *testing.T) {
+//	NewPageTree(NewAABB(math.MinInt64, math.MaxInt64, math.MaxInt64, math.MinInt64), 128)
 }
 
 func TestNewPageTile(t *testing.T) {
 	vm := NewVM(KSIZE_16K)
 	p := vm.ReservePage()
 
-	pt := NewPageTile(p, vm.PageWidth(), 1, 1)
+	pt := NewPageTile(p, vm.PageWidth(), 0, 0)
+	if pt.px != 0 || pt.py != 0 { t.Error("New page tile have invalid pt coords") }
+	if pt.MinX != 0 || pt.MinY != 0 || pt.MaxX != 128 || pt.MaxY != 128 {
+		t.Error("New page have invalid rect")
+	}
+	if pt.getAABB().SizeX() != 128 || pt.getAABB().SizeY() != 128{
+		t.Error("New page have invalid rect size")
+	}
+
+	pt = NewPageTile(p, vm.PageWidth(), 1, 1)
 	if pt.px != 1 || pt.py != 1 { t.Error("New page tile have invalid pt coords") }
 	if pt.MinX != 128 || pt.MinY != 128 || pt.MaxX != 128 + 128 || pt.MaxY != 128 + 128 {
 		t.Error("New page have invalid rect")
@@ -54,7 +76,7 @@ func TestAddPage(t *testing.T) {
 	vm := NewVM(KSIZE_16K)
 	p := vm.ReservePage()
 	pt := NewPageTile(p, vm.PageWidth(), 1, 1)
-	pb := NewPageTree(NewAABB(-128, 128, 128, -128))
+	pb := NewPageTree(NewAABB(-128, 128, 128, -128), 128)
 	pb.Add(&pt)
 	if pb.Count() != 1 { t.Error("Pages count in a tree must be 1") }
 	// TODO: Must throw an error
@@ -63,7 +85,7 @@ func TestAddPage(t *testing.T) {
 }
 
 func fillPageTree(t *testing.T, vm *VM) PageTree {
-	pb := NewPageTree(NewAABB(-128 * 21, 128 * 21, 128 * 21, -128 * 21))
+	pb := NewPageTree(NewAABB(-128 * 21, 128 * 21, 128 * 21, -128 * 21), 128)
 	for x := int64(-20) ; x <= 20; x ++ {
 		for y := int64(-20) ; y <= 20 ; y++ {
 			pt := NewPageTile(vm.ReservePage(), vm.PageWidth(), x, y)
@@ -82,7 +104,7 @@ func TestPageTreeSearchPage(t *testing.T) {
 	pb := fillPageTree(t, &vm)
 	for x := int64(-20) ; x <= 20; x ++ {
 		for y := int64(-20) ; y <= 20 ; y++ {
-			q := pb.QueryPage(x, y, vm.wsize)
+			q := pb.QueryPage(x, y)
 			if q == nil {
 				t.Error("Can't query page at pos ", x, "x", y)
 			}
@@ -98,7 +120,7 @@ func TestPageRemove(t *testing.T) {
 	pb := fillPageTree(t, &vm)
 	for x := int64(-20) ; x <= 20; x ++ {
 		for y := int64(-20) ; y <= 20 ; y++ {
-			if ! pb.RemovePXY(x, y, vm.wsize) {
+			if ! pb.RemovePXY(x, y) {
 				t.Error("Can't remove page at pos ", x, "x", y)
 			}
 		}
@@ -108,7 +130,7 @@ func TestPageRemove(t *testing.T) {
 	}
 	for x := int64(-20) ; x <= 20; x ++ {
 		for y := int64(-20) ; y <= 20 ; y++ {
-			q := pb.QueryPage(x, y, vm.wsize)
+			q := pb.QueryPage(x, y)
 			if q != nil {
 				t.Error("Query page after empty at pos ", x, "x", y)
 			}

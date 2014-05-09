@@ -1,6 +1,10 @@
 package main
 
-type PageTree QuadTree
+type PageTree struct {
+	QuadTree
+
+	wsize uint
+}
 
 type PageTile struct {
 	AABB
@@ -21,8 +25,11 @@ func (pt PageTile) getAABB() AABB {
 	return pt.AABB
 }
 
-func NewPageTree(bbox AABB) PageTree {
-	return PageTree(NewQuadTree(bbox))
+func NewPageTree(bbox AABB, wsize uint) PageTree {
+	if bbox.SizeX() % uint64(wsize) != 0 || bbox.SizeY() % uint64(wsize) != 0 {
+		panic("NewPageTree: bbox size does not fit page wsize")
+	}
+	return PageTree{NewQuadTree(bbox), wsize}
 }
 
 func NewPageTile(p *Page, wsize uint, px int64, py int64) PageTile {
@@ -53,7 +60,8 @@ func WtoP(wc int64, wsize uint) int64 {
 }
 
 func (pb *PageTree) Add(pt *PageTile) {
-	(*QuadTree)(pb).Add(pt)
+	// TODO: test page wsize, aabb, etc
+	pb.QuadTree.Add(pt)
 }
 
 func (pb *PageTree) Remove(pt *PageTile) bool {
@@ -64,9 +72,8 @@ func (pb *PageTree) Remove(pt *PageTile) bool {
 	return false
 }
 
-// TODO: put wsize into Tree str
-func (pb *PageTree) RemovePXY(px int64, py int64, wsize uint) bool {
-	if pb.root.remove(px, py, NewAABBPXY(px, py, wsize)) {
+func (pb *PageTree) RemovePXY(px int64, py int64) bool {
+	if pb.root.remove(px, py, NewAABBPXY(px, py, pb.wsize)) {
 		pb.count --
 		return true
 	}
@@ -81,8 +88,8 @@ func (pb *PageTree) getAABB() AABB {
 	return pb.root.getAABB()
 }
 
-func (pb *PageTree) QueryPage(px int64, py int64, wsize uint) *PageTile {
-	return pb.root.queryPage(px, py, NewAABBPXY(px, py, wsize))
+func (pb *PageTree) QueryPage(px int64, py int64) *PageTile {
+	return pb.root.queryPage(px, py, NewAABBPXY(px, py, pb.wsize))
 }
 
 func (tile *QuadTile) queryPage(px int64, py int64, qbox AABB) *PageTile {
