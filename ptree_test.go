@@ -32,12 +32,33 @@ func TestOFInt64(t *testing.T) {
 	fmt.Printf("MinInt64 = %d\n", math.MinInt64)
 	// OF: fmt.Printf("-1 * MinInt64 = %d\n", math.MinInt64 * -1)
 	fmt.Printf("MaxInt64 = %d\n", math.MaxInt64)
+	// fmt.Printf("MaxUInt64 = %d\n", math.MaxUint64)
 	fmt.Printf("+ = %d\n", uint64(-1 * math.MinInt64) + uint64(math.MaxInt64))
 	// OF: fmt.Printf("1 + = %x\n", uint64(-1 * math.MinInt64) + uint64(math.MaxInt64) + uint64(1))
 }
 
+func TestLastPage(t *testing.T) {
+	vm := NewVM(KSIZE_16K)
+	p := vm.ReservePage()
+
+	px := int64((uint64(math.MaxInt64) + 1) / uint64(vm.wsize))
+	py := px
+	pt := NewPageTile(p, vm.PageWidth(), px, py)
+	fmt.Print("pt next last TR: wsize = ", vm.wsize," px = ", px, " pt = ", pt,"\n")
+
+	px = int64((uint64(math.MaxInt64) + 1) / uint64(vm.wsize)) - 1
+	py = px
+	pt = NewPageTile(p, vm.PageWidth(), px, py)
+	fmt.Print("pt last TR: wsize = ", vm.wsize," px = ", px, " pt = ", pt,"\n")
+
+	if pt.getAABB().MinX < 0 || pt.getAABB().MinY < 0{
+		t.Error("Invalid AABB overflow")
+	}
+}
+
 func TestNewPageTreeMaxInt64(t *testing.T) {
-//	NewPageTree(NewAABB(math.MinInt64, math.MaxInt64, math.MaxInt64, math.MinInt64), 128)
+	pt := NewPageTree(NewAABB(math.MinInt64, math.MaxInt64, math.MaxInt64, math.MinInt64), 128)
+	fmt.Print("pt max = ", pt.getAABB(),"\n")
 }
 
 func TestNewPageTile(t *testing.T) {

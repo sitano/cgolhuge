@@ -1,5 +1,7 @@
 package main
 
+import "math"
+
 type PageTree struct {
 	QuadTree
 
@@ -26,9 +28,13 @@ func (pt PageTile) getAABB() AABB {
 }
 
 func NewPageTree(bbox AABB, wsize uint) PageTree {
-	if bbox.SizeX() % uint64(wsize) != 0 || bbox.SizeY() % uint64(wsize) != 0 {
-		panic("NewPageTree: bbox size does not fit page wsize")
+	if ! ((bbox.MinX == math.MinInt64 && bbox.MaxX == math.MaxInt64) ||
+		(bbox.MinY == math.MinInt64 && bbox.MaxY == math.MaxInt64)) {
+		if bbox.SizeX() % uint64(wsize) != 0 || bbox.SizeY() % uint64(wsize) != 0 {
+			panic("NewPageTree: bbox size does not fit page wsize")
+		}
 	}
+
 	return PageTree{NewQuadTree(bbox), wsize}
 }
 
@@ -43,9 +49,19 @@ func NewPageTile(p *Page, wsize uint, px int64, py int64) PageTile {
 }
 
 func NewAABBPXY(px int64, py int64, wsize uint) AABB {
-	return NewAABB(
+	bbox := NewAABB(
 		PtoW(px, wsize), PtoW(px + 1, wsize),
 		PtoW(py, wsize), PtoW(py + 1, wsize))
+	// Check overflow
+	if px > 0 && bbox.MinX < 0 && bbox.MaxX > 0 {
+		maxX := int64(math.MaxInt64)
+		maxY := bbox.MaxY
+		if py > 0 && bbox.MinY < 0 && bbox.MaxY > 0 {
+			maxY = math.MaxInt64
+		}
+		bbox = NewAABB(bbox.MaxX, maxX, bbox.MaxY, maxY)
+	}
+	return bbox
 }
 
 func PtoW(pc int64, wsize uint) int64 {

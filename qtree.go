@@ -3,6 +3,8 @@ Based on work of Volker Poplawski, 2013 (https://github.com/volkerp/goquadtree)
 */
 package main
 
+import "fmt"
+
 // Number of entries until a quad is split
 const MAX_ENTRIES_PER_TILE = 16
 
@@ -18,12 +20,17 @@ const (
 )
 
 // Use AABB() to construct a AABB object
+// Min - inclusive, Max - exlusive
 type AABB struct {
 	MinX, MaxX, MinY, MaxY int64
 }
 
+func (b AABB) String() string {
+	return fmt.Sprintf("[AABB x=%d, y=%d / %d, %d]", b.MinX, b.MinY, b.MaxX, b.MaxY)
+}
+
 func Min(x int64, y int64) int64 {
-	if x < y {
+	if x <= y {
 		return x
 	}
 
@@ -31,7 +38,7 @@ func Min(x int64, y int64) int64 {
 }
 
 func Max(x int64, y int64) int64 {
-	if x > y {
+	if x >= y {
 		return x
 	}
 
