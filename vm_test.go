@@ -5,6 +5,19 @@ import (
 	"testing"
 )
 
+func TestBitsShift(t *testing.T) {
+	if 2 >> 1 != 1 { t.Error("2 >> 1 != 1") }
+	if 2 >> 0 != 2 { t.Error("2 >> 0 != 2") }
+	if 2 >> 2 != 0 { t.Error("2 >> 2 != 0") }
+	if 2 >> 3 != 0 { t.Error("2 >> 3 != 0") }
+	if -8 << 1 != -16 { t.Error("-8 << 1 != -16: ", -8 << 1) }
+	if -8 >> 1 != -4 { t.Error("-8 >> 1 != -4: ", -8 >> 1) }
+	if -8 >> 2 != -2 { t.Error("-8 >> 2 != -2: ", -8 >> 2) }
+	if -8 >> 3 != -1 { t.Error("-8 >> 3 != -1: ", -8 >> 1) }
+	if -8 >> 4 != -1 { t.Error("-8 >> 4 != 1: ", -8 >> 4) }
+	if -8 >> 5 != -1 { t.Error("-8 >> 5 != 1: ", -8 >> 5) }
+}
+
 func TestBits(t *testing.T) {
 	if bits(0) != 0 { t.Error("bits(0) != 0, but", bits(0)) }
 	if bits(2) != 1 { t.Error("bits(2) != 2, but", bits(1)) }

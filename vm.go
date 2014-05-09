@@ -17,6 +17,7 @@ type VM struct {
 	ksize uint
 	// Width == Height of the page
 	wsize uint
+	wsbits uint
 
 	reserved *list.List
 	reclaimed *list.List
@@ -27,9 +28,11 @@ func NewVM(ksize uint) VM {
 	if (!isPowerOf2(ksize) || lg2(ksize) & 1 != 0) {
 		panic(fmt.Sprintf("Page size must fit equal w/h sizes, sz=%d, lg2=%d", ksize, lg2(ksize)))
 	}
+	ws := pow2ui64(lg2(ksize) >> 1)
 	return VM{
 		ksize: ksize,
-		wsize: pow2ui64(lg2(ksize) >> 1),
+		wsize: ws,
+		wsbits: bits(ws),
 		reserved: list.New(),
 		reclaimed: list.New(),
 	}

@@ -42,8 +42,8 @@ func NewAABB(xa, xb, ya, yb int64) AABB {
 	return AABB{ Min(xa, xb), Max(xa, xb), Min(ya, yb), Max(ya, yb) }
 }
 
-// Make AABB implement the AABBer interface
-func (b AABB) AABB() AABB {
+// Make AABB implement the QuadElement interface
+func (b AABB) getAABB() AABB {
 	return b
 }
 
@@ -68,9 +68,9 @@ func (b AABB) Contains(o AABB) bool {
 }
 
 
-// QuadTree expects its values to implement the AABBi interface.
+// QuadTree expects its values to implement the QuadElement interface.
 type QuadElement interface {
-	AABB() AABB
+	getAABB() AABB
 }
 
 // quad-tile / node of the quad-tree
@@ -84,18 +84,34 @@ type QuadTile struct {
 
 type QuadTree struct {
 	root QuadTile
+	count uint64
 }
 
 // Constructs an empty quad-tree
 // bbox specifies the extends of the coordinate system.
 func NewQuadTree(bbox AABB) QuadTree {
-	qt := QuadTree{ QuadTile{AABB:bbox} }
+	qt := QuadTree{ QuadTile{AABB:bbox}, 0 }
 	return qt
 }
 
 // Adds a value to the quad-tree by trickle down from the root node.
 func (qb *QuadTree) Add(v QuadElement) {
 	qb.root.add(v)
+	qb.count ++
+}
+
+// TODO: remove
+
+func (qb *QuadTree) Count() uint64 {
+	return qb.count
+}
+
+func (tile *QuadTile) Contents() []QuadElement {
+	return tile.contents
+}
+
+func (tile *QuadTile) Childs() [4]*QuadTile {
+	return tile.childs
 }
 
 // Returns all values which intersect the query box
@@ -105,7 +121,7 @@ func (qb *QuadTree) Query(bbox AABB) (values []QuadElement) {
 
 func (tile *QuadTile) add(v QuadElement) {
 	// look for sub-tile directly below this tile to accomodate value.
-	if i := tile.findChildIndex(v.AABB()); i < 0 {
+	if i := tile.findChildIndex(v.getAABB()); i < 0 {
 		// no suitable sub-tile for value found.
 		// either this tile has no childs or
 		// value does not fit in any subtile.
@@ -175,7 +191,7 @@ func (tile *QuadTile) query(qbox AABB, ret []QuadElement) []QuadElement {
 
 	// return candidates at this tile
 	for _, v := range tile.contents {
-		if qbox.Intersects(v.AABB()) {
+		if qbox.Intersects(v.getAABB()) {
 			ret = append(ret, v)
 		}
 	}

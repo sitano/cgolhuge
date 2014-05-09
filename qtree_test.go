@@ -86,7 +86,7 @@ func randomAABBes(n int, frame AABB, avgSize int64) []AABB {
 // Returns all elements of data which intersect query
 func queryLinear(data []AABB, query AABB) (ret []QuadElement) {
 	for _, v := range data {
-		if query.Intersects(v.AABB()) {
+		if query.Intersects(v.getAABB()) {
 			ret = append(ret, v)
 		}
 	}
@@ -96,8 +96,8 @@ func queryLinear(data []AABB, query AABB) (ret []QuadElement) {
 
 
 func compareQuadElement(v1, v2 QuadElement) bool {
-	b1 := v1.AABB()
-	b2 := v2.AABB()
+	b1 := v1.getAABB()
+	b2 := v2.getAABB()
 
 	return b1.MinX == b2.MinX && b1.MaxX == b2.MaxX &&
 		b1.MinY == b2.MinY && b2.MaxY == b2.MaxY
@@ -278,4 +278,3 @@ func BenchmarkPointsLinear(b *testing.B) {
 		queryLinear(points10M, q)
 	}
 }
-
