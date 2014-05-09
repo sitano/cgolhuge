@@ -2,26 +2,34 @@ package main
 
 import (
 	"container/list"
+	"fmt"
 )
 
 const (
 	// Page of size 2**7 * 2**7 = 128 * 128 = 16kb
-	KSIZE_16K = 14
+	KSIZE_16K = 128 * 128
 )
 
 type Page []uint8
 
 type VM struct {
-	// Power of 2 to set page size
+	// Page size in bytes
 	ksize uint
+	// Width == Height of the page
+	wsize uint
 
 	reserved *list.List
 	reclaimed *list.List
 }
 
+// lg(ksize) must be div by 2
 func NewVM(ksize uint) VM {
+	if (!isPowerOf2(ksize) || lg2(ksize) & 1 != 0) {
+		panic(fmt.Sprintf("Page size must fit equal w/h sizes, sz=%d, lg2=%d", ksize, lg2(ksize)))
+	}
 	return VM{
 		ksize: ksize,
+		wsize: pow2ui64(lg2(ksize) >> 1),
 		reserved: list.New(),
 		reclaimed: list.New(),
 	}
@@ -91,4 +99,30 @@ func (vm VM) Reclaimed() int {
 
 func (vm VM) PageSize() uint {
 	return pow2ui64(vm.ksize)
+}
+
+func bits(v uint) uint {
+	k := uint(0)
+	t := int64(v)
+	for t != 0 {
+		t &= t - 1
+		k ++
+	}
+	return k
+}
+
+func isPowerOf2(v uint) bool {
+	return v != 0 && v & (v - 1) == 0
+}
+
+func lg2(v uint) uint {
+	k := uint(0)
+	for ; v > 0 ; v >>= 1 {
+		k++
+	}
+	return k - 1
+}
+
+func (vm VM) PageWidth() uint {
+	return vm.wsize
 }

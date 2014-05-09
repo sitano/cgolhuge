@@ -5,6 +5,28 @@ import (
 	"testing"
 )
 
+func TestBits(t *testing.T) {
+	if bits(0) != 0 { t.Error("bits(0) != 0, but", bits(0)) }
+	if bits(2) != 1 { t.Error("bits(2) != 2, but", bits(1)) }
+	if bits(3) != 2 { t.Error("bits(3) != 3, but", bits(2)) }
+	if bits(4) != 1 { t.Error("bits(4) != 4, but", bits(1)) }
+}
+
+func TestLg2(t *testing.T) {
+	if lg2(1) != 0 { t.Error("lg2(1) != 0, but", lg2(1)) }
+	if lg2(2) != 1 { t.Error("lg2(2) != 1, but", lg2(2)) }
+	if lg2(4) != 2 { t.Error("lg2(4) != 2, but", lg2(4)) }
+	if lg2(8) != 3 { t.Error("lg2(8) != 3, but", lg2(8)) }
+}
+
+func TestIsPowerOf2(t *testing.T) {
+	if isPowerOf2(0) { t.Error("isPowerOf2(0) != true, but", isPowerOf2(0)) }
+	if !isPowerOf2(1) { t.Error("isPowerOf2(1) != false, but", isPowerOf2(1)) }
+	if !isPowerOf2(2) { t.Error("isPowerOf2(2) != false, but", isPowerOf2(2)) }
+	if isPowerOf2(3) { t.Error("isPowerOf2(3) != true, but", isPowerOf2(3)) }
+	if !isPowerOf2(4) { t.Error("isPowerOf2(4) != false, but", isPowerOf2(4)) }
+}
+
 func TestPow2UInt64(t *testing.T) {
 	if pow2ui64(0) != 1 { t.Error("pow2ui64(0) != 1, but", pow2ui64(0)) }
 	if pow2ui64(1) != 2 { t.Error("pow2ui64(1) != 2, but", pow2ui64(1)) }
@@ -74,4 +96,11 @@ func TestVM(t *testing.T) {
 	if vm.Pages() != 2 { t.Error("Pages 2") }
 	if vm.Reclaimed() != 2 { t.Error("Reclaimed 2") }
 	if vm.Reserved() != 0 { t.Error("Reserved 0") }
+}
+
+func TestPageWidth(t *testing.T) {
+	vm := NewVM(KSIZE_16K)
+	if (vm.PageWidth() != 128) {
+		t.Error("Invalid page side calc for ps = 16k")
+	}
 }
