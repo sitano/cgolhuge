@@ -172,3 +172,21 @@ func (pb *PageTree) MaxPagesY() uint64 {
 	ws := uint64(pb.wsize)
 	return Abs(bbox.MinY) / ws + Abs(bbox.MaxY) / ws
 }
+
+func (pt *PageTile) SetByte(i uint, v byte) {
+	b := *(pt.p)
+	b[i] = v
+}
+
+func (pt *PageTile) GetByte(i uint) byte {
+	b := *(pt.p)
+	return b[i]
+}
+
+func (pt *PageTile) GetAlive() uint {
+	return pt.alive
+}
+
+func (pt *PageTile) SetAlive(alive uint) {
+	pt.alive = alive
+}

@@ -57,6 +57,10 @@ func NewAABB(xa, xb, ya, yb int64) AABB {
 	return AABB{ Min(xa, xb), Max(xa, xb), Min(ya, yb), Max(ya, yb) }
 }
 
+func NewAABBMax() AABB {
+	return NewAABB(math.MinInt64, math.MaxInt64, math.MaxInt64, math.MinInt64)
+}
+
 // Make AABB implement the QuadElement interface
 func (b AABB) getAABB() AABB {
 	return b

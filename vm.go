@@ -10,7 +10,7 @@ const (
 	KSIZE_16K = 128 * 128
 )
 
-type Page []uint8
+type Page []byte
 
 type VM struct {
 	// Page size in bytes
@@ -39,8 +39,7 @@ func NewVM(ksize uint) VM {
 }
 
 func (vm VM) NewPage() Page {
-	size := pow2ui64(vm.ksize)
-	return Page(make([]uint8, size, size))
+	return Page(make([]byte, vm.ksize, vm.ksize))
 }
 
 func searchPage(l *list.List, p *Page) *list.Element {

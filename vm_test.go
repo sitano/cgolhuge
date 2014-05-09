@@ -82,6 +82,7 @@ func TestVM(t *testing.T) {
 	if vm.Reclaimed() != 0 { t.Error("No reclaimed") }
 	if vm.Reserved() != 1 { t.Error("Reserved 1") }
 	if p1 == nil { t.Error("Reserve failed") }
+	if len(*p1) != KSIZE_16K { t.Error("Invalid page size") }
 
 	vm.ReclaimPage(p1)
 
