@@ -28,11 +28,11 @@ func (pt PageTile) getAABB() AABB {
 }
 
 func NewPageTree(bbox AABB, wsize uint) PageTree {
-	if ! ((bbox.MinX == math.MinInt64 && bbox.MaxX == math.MaxInt64) ||
-		(bbox.MinY == math.MinInt64 && bbox.MaxY == math.MaxInt64)) {
-		if bbox.SizeX() % uint64(wsize) != 0 || bbox.SizeY() % uint64(wsize) != 0 {
-			panic("NewPageTree: bbox size does not fit page wsize")
-		}
+	szx := bbox.SizeX()
+	szy := bbox.SizeY()
+	if (szx != math.MaxUint64 && szx % uint64(wsize) != 0) ||
+		(szy != math.MaxUint64 && szy % uint64(wsize) != 0) {
+		panic("NewPageTree: bbox size does not fit page wsize")
 	}
 
 	return PageTree{NewQuadTree(bbox), wsize}

@@ -3,6 +3,7 @@ Based on work of Volker Poplawski, 2013 (https://github.com/volkerp/goquadtree)
 */
 package main
 
+import "math"
 import "fmt"
 
 // Number of entries until a quad is split
@@ -62,10 +63,18 @@ func (b AABB) getAABB() AABB {
 }
 
 func (b AABB) SizeX() uint64 {
+	// Check overflow
+	if  b.MinX == math.MinInt64 && b.MaxX == math.MaxInt64 {
+		return math.MaxUint64
+	}
 	return Abs(b.MaxX - b.MinX)
 }
 
 func (b AABB) SizeY() uint64 {
+	// Check overflow
+	if  b.MinY == math.MinInt64 && b.MaxY == math.MaxInt64 {
+		return math.MaxUint64
+	}
 	return Abs(b.MaxY - b.MinY)
 }
 

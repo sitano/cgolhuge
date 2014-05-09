@@ -58,7 +58,7 @@ func TestLastPage(t *testing.T) {
 
 func TestNewPageTreeMaxInt64(t *testing.T) {
 	pt := NewPageTree(NewAABB(math.MinInt64, math.MaxInt64, math.MaxInt64, math.MinInt64), 128)
-	fmt.Print("pt max = ", pt.getAABB(),"\n")
+	fmt.Print("pt max = ", pt.getAABB(), ", sizex = ", pt.getAABB().SizeX(),"\n")
 }
 
 func TestNewPageTile(t *testing.T) {
