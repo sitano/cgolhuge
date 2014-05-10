@@ -5,14 +5,23 @@ import "math"
 import "fmt"
 
 func TestWtoP(t *testing.T) {
-	if WtoP(0, 128) != 0 { t.Error("Invalid WtoP coord at 0 / 128") }
-	if WtoP(127, 128) != 0 { t.Error("Invalid WtoP coord at 127 / 128") }
-	if WtoP(128, 128) != 1 { t.Error("Invalid WtoP coord at 128 /  128") }
-	if WtoP(129, 128) != 1 { t.Error("Invalid WtoP coord at 129 / 128") }
-
-	if WtoP(-129, 128) != -2 { t.Error("Invalid WtoP coord at -129 / 128: ", WtoP(-129, 128)) }
-	if WtoP(-128, 128) != -2 { t.Error("Invalid WtoP coord at -128 / 128") }
-	if WtoP(-1, 128) != -1 { t.Error("Invalid WtoP coord at -1 / 128") }
+	ws := uint(128)
+	cases := [][2]int64{
+		[2]int64{0, 0},
+		[2]int64{127, 0},
+		[2]int64{128, 1},
+		[2]int64{129, 1},
+		[2]int64{-1, -1},
+		[2]int64{-127, -1},
+		[2]int64{-128, -1},
+		[2]int64{-129, -2},
+	}
+	for _, v := range cases {
+		pc :=  WtoP(v[0], ws)
+		if pc != v[1] {
+			t.Error("pc ", v, ", px = ", WtoP(v[0], ws), " but ", pc)
+		}
+	}
 }
 
 func TestPtoW(t *testing.T) {

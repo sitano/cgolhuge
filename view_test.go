@@ -35,16 +35,19 @@ func TestClearStateZ(t *testing.T) {
 
 func TestGetPPageOfftest(t *testing.T) {
 	ws := uint(128)
-	cases := [][5]int64{
-		[5]int64{0,0,0,0, 128 * 128 - 128},
-		[5]int64{127,0,0,0, KSIZE_16K - 1},
-		[5]int64{0,127,0,0, 0},
-		[5]int64{127,127,0,0, 127},
+	cases := [][3]int64{
+		[3]int64{0,0, 128 * 128 - 128},
+		[3]int64{127,0, KSIZE_16K - 1},
+		[3]int64{0,127, 0},
+		[3]int64{127,127, 127},
+		[3]int64{127,-128, KSIZE_16K - 1},
+		[3]int64{-128,127, 0},
+		[3]int64{-128,-128, 128 * 128 - 128},
 	}
 	for _, v := range cases {
-		offset :=  GetPPageOffset(v[0], v[1], v[2], v[3], ws)
-		if offset != uint(v[4]) {
-			t.Error("offset ", v, " but ", offset)
+		offset :=  GetPPageOffset(v[0], v[1], WtoP(v[0], ws), WtoP(v[1], ws), ws)
+		if offset != uint(v[2]) {
+			t.Error("offset ", v, ", px = ", WtoP(v[0], ws), ", py = ", WtoP(v[1], ws), " but ", offset)
 		}
 		if offset >= KSIZE_16K {
 			t.Error("offset exceeded max ksize at ", v)
@@ -106,5 +109,71 @@ func TestWorldViewSetGet(t *testing.T) {
 			t.Error("Empty page must have 0 alive")
 		}
 		t.Error("Empty page must be reclaimed out of tree")
+	}
+}
+
+func TestMVXY(t *testing.T) {
+	cases := [][5]int64{
+		[5]int64{0,  1, -128, 128, 1},
+		[5]int64{0, -1, -128, 128,-1},
+		[5]int64{127, 1, -128, 128, -128},
+		[5]int64{127, -1, -128, 128,126},
+		[5]int64{128,  1, -128, 128, -128},
+		[5]int64{129,  1, -128, 128, -128},
+		[5]int64{-127,  -1, -128, 128, -128},
+		[5]int64{-128,  -1, -128, 128, 127},
+
+		[5]int64{math.MaxInt64, 1, math.MinInt64, math.MaxInt64, math.MinInt64},
+		[5]int64{math.MinInt64,  -1, math.MinInt64, math.MaxInt64, math.MaxInt64},
+	}
+	for _, v := range cases {
+		nx := mvXY1Around(v[0], v[1], v[2], v[3])
+		if nx != v[4] {
+			t.Error("nx ", v, " but ", nx)
+		}
+	}
+
+}
+
+func TestLifeSumAt(t *testing.T) {
+	vm := NewVM(KSIZE_16K)
+	pb := NewPageTree(NewAABB(-128, 128, 128, -128), 128)
+	wv := NewWorldView(&vm, &pb)
+
+	wv.Set(0, 0, 0, LIFE)
+	wv.Set(1, 1, 0, LIFE)
+	wv.Set(2, 2, 0, LIFE)
+	wv.Set(1, 0, 0, LIFE)
+
+	wv.Set(-128, -128, 0, LIFE)
+	wv.Set(-128, 127, 0, LIFE)
+	wv.Set(127, 127, 0, LIFE)
+	wv.Set(127, -128, 0, LIFE)
+
+	cases := [][4]int64{
+		[4]int64{0, 0, 0, 2},
+		[4]int64{1, 0, 0, 2},
+		[4]int64{2, 0, 0, 2},
+
+		[4]int64{0, 1, 0, 3},
+		[4]int64{1, 1, 0, 3},
+		[4]int64{2, 1, 0, 3},
+
+		[4]int64{0, 2, 0, 1},
+		[4]int64{1, 2, 0, 2},
+		[4]int64{2, 2, 0, 1},
+
+		[4]int64{127, 127, 0, 3},
+		[4]int64{126, 126, 0, 1},
+		[4]int64{-128, -128, 0, 3},
+		[4]int64{-128, 127, 0, 3},
+		[4]int64{127, -128, 0, 3},
+	}
+
+	for _, v := range cases {
+		lf := wv.LifeSumAt(v[0], v[1], byte(v[2]))
+		if lf != byte(v[3]) {
+			t.Error("lf ", v, " but ", lf)
+		}
 	}
 }

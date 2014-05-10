@@ -1,19 +1,13 @@
 package main
 
+import "math"
+
 const (
 	DEAD = byte(0)
 	LIFE = byte(1)
 	ZSTEP = 2
 	ZMASK = 0x3
 	ZMAX  = 3
-	N
-	W
-	E
-	S
-	NW
-	NE
-	SW
-	SE
 )
 
 type View interface {
@@ -22,8 +16,9 @@ type View interface {
 
 	Set(x int64, y int64, z byte, t byte)
 	Get(x int64, y int64, z byte) byte
-	// LifeSumAt(z byte) byte
-	// NextTo(x int64, y int64, o byte)
+
+	NextTo(x int64, y int64, z byte, dx int64, dy int64) byte
+	LifeSumAt(x int64, y int64, z byte) byte
 }
 
 type WorldView struct {
@@ -110,10 +105,10 @@ func (wv *WorldView) Get(x int64, y int64, z byte) byte {
 }
 
 func GetPPageOffset(x int64, y int64, px int64, py int64, wsize uint) uint {
-	pxoffset := x - px * int64(wsize)
-	pyoffset := y - py * int64(wsize)
-	pydiff   := int64(wsize) - pyoffset - 1
-	return uint(pydiff * int64(wsize) + pxoffset)
+	pxoffset := Abs(x - px * int64(wsize))
+	pyoffset := Abs(y - py * int64(wsize))
+	pydiff   := uint64(wsize) - pyoffset - 1
+	return uint(pydiff * uint64(wsize) + pxoffset)
 }
 
 func ClearStateZ(b byte, z byte) byte {
@@ -127,4 +122,37 @@ func WriteStateZ(b byte, z byte, v byte) byte {
 
 func ReadStateZ(b byte, z byte) byte {
 	return (b >> (z * ZSTEP)) & ZMASK
+}
+
+// dx, dy = + / - 1
+func (vw *WorldView) NextTo(x int64, y int64, z byte, dx int64, dy int64) byte {
+	bb := vw.pb.getAABB()
+	return vw.Get(mvXY1Around(x, dx, bb.MinX, bb.MaxX), mvXY1Around(y, dy, bb.MinY, bb.MaxY), z)
+}
+
+// dx, dy = + / - 1
+func mvXY1Around(x int64, dx int64, min int64, max int64) int64 {
+	nx := x + dx
+
+	if x >= max - 1 && dx > 0 {
+		nx = min
+	}
+
+	if x <= min && dx < 0 {
+		if max == math.MaxInt64 && min == math.MinInt64 {
+			nx = max
+		} else {
+			nx = max - 1
+		}
+	}
+
+	return nx
+
+}
+
+func (vw *WorldView) LifeSumAt(x int64, y int64, z byte) byte {
+	// Just sum them up as DEAD = 0, LIFE = 1
+	return vw.NextTo(x, y, z, -1, +1) + vw.NextTo(x, y, z, 0, +1) + vw.NextTo(x, y, z, +1, +1) +
+		vw.NextTo(x, y, z, -1, 0) + 0 + vw.NextTo(x, y, z, +1, 0) +
+		vw.NextTo(x, y, z, -1, -1) + vw.NextTo(x, y, z, 0, -1) + vw.NextTo(x, y, z, +1, -1)
 }

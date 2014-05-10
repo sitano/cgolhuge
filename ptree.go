@@ -72,7 +72,8 @@ func WtoP(wc int64, wsize uint) int64 {
 	if (wc >= 0) {
 		return wc / int64(wsize)
 	}
-	return wc / int64(wsize) - 1
+
+	return (wc + 1) / int64(wsize) - 1
 }
 
 func (pb *PageTree) Add(pt *PageTile) {
