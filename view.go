@@ -56,7 +56,7 @@ func (wv WorldView) Set(x int64, y int64, z byte, t byte) {
 	}
 
 	// Coord inside of page
-	pboffset := GetPPageOffset(x, y, px, py, wsize)
+	pboffset := WPtoPO(x, y, px, py, wsize)
 
 	// Get data
 	data := pt.GetByte(pboffset)
@@ -74,6 +74,10 @@ func (wv WorldView) Set(x int64, y int64, z byte, t byte) {
 		}
 	}
 
+	wv.TryReclaim(pt)
+}
+
+func (wv *WorldView) TryReclaim(pt *PageTile) {
 	if pt != nil && pt.GetAlive() == 0 {
 		wv.pb.Remove(pt)
 		wv.vm.ReclaimPage(pt.p)
@@ -98,17 +102,25 @@ func (wv *WorldView) Get(x int64, y int64, z byte) byte {
 	}
 
 	// Coord inside of page
-	pboffset := GetPPageOffset(x, y, px, py, wsize)
+	pboffset := WPtoPO(x, y, px, py, wsize)
 
 	// Get data
 	return ReadStateZ(pt.GetByte(pboffset), z)
 }
 
-func GetPPageOffset(x int64, y int64, px int64, py int64, wsize uint) uint {
+func WPtoPO(x int64, y int64, px int64, py int64, wsize uint) uint {
 	pxoffset := Abs(x - px * int64(wsize))
 	pyoffset := Abs(y - py * int64(wsize))
 	pydiff   := uint64(wsize) - pyoffset - 1
 	return uint(pydiff * uint64(wsize) + pxoffset)
+}
+
+func POtoWX(offset uint, px int64, wsize uint) int64 {
+	return px * int64(wsize) + int64(offset % wsize)
+}
+
+func POtoWY(offset uint, py int64, wsize uint) int64 {
+	return py * int64(wsize) + int64(wsize) - int64(offset / wsize) - 1
 }
 
 func ClearStateZ(b byte, z byte) byte {
@@ -127,11 +139,11 @@ func ReadStateZ(b byte, z byte) byte {
 // dx, dy = + / - 1
 func (vw *WorldView) NextTo(x int64, y int64, z byte, dx int64, dy int64) byte {
 	bb := vw.pb.getAABB()
-	return vw.Get(mvXY1Around(x, dx, bb.MinX, bb.MaxX), mvXY1Around(y, dy, bb.MinY, bb.MaxY), z)
+	return vw.Get(MvXY1(x, dx, bb.MinX, bb.MaxX), MvXY1(y, dy, bb.MinY, bb.MaxY), z)
 }
 
 // dx, dy = + / - 1
-func mvXY1Around(x int64, dx int64, min int64, max int64) int64 {
+func MvXY1(x int64, dx int64, min int64, max int64) int64 {
 	nx := x + dx
 
 	if x >= max - 1 && dx > 0 {

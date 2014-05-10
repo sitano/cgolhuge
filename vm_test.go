@@ -118,3 +118,25 @@ func TestPageWidth(t *testing.T) {
 		t.Error("Invalid page side calc for ps = 16k")
 	}
 }
+
+func TestPageLen(t *testing.T) {
+	vm := NewVM(KSIZE_16K)
+	p := vm.ReservePage()
+	r := ([]byte)(*p)
+	if len(r) != KSIZE_16K {
+		t.Error("New page have invalid size")
+	}
+}
+
+func TestPageMustBeClean(t *testing.T) {
+	vm := NewVM(KSIZE_16K)
+	p := vm.ReservePage()
+	r := ([]byte)(*p)
+	r[0] = 0xff
+	vm.ReclaimPage(p)
+	p2 := vm.ReservePage()
+	r2 := ([]byte)(*p2)
+	if r2[0] != 0 {
+		t.Error("Reserved page after reclaimation must be clean")
+	}
+}

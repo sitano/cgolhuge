@@ -33,7 +33,7 @@ func TestClearStateZ(t *testing.T) {
 	if b != byte(135-128) { t.Error("clear z3/2") }
 }
 
-func TestGetPPageOfftest(t *testing.T) {
+func TestWPtoPO(t *testing.T) {
 	ws := uint(128)
 	cases := [][3]int64{
 		[3]int64{0,0, 128 * 128 - 128},
@@ -45,7 +45,7 @@ func TestGetPPageOfftest(t *testing.T) {
 		[3]int64{-128,-128, 128 * 128 - 128},
 	}
 	for _, v := range cases {
-		offset :=  GetPPageOffset(v[0], v[1], WtoP(v[0], ws), WtoP(v[1], ws), ws)
+		offset :=  WPtoPO(v[0], v[1], WtoP(v[0], ws), WtoP(v[1], ws), ws)
 		if offset != uint(v[2]) {
 			t.Error("offset ", v, ", px = ", WtoP(v[0], ws), ", py = ", WtoP(v[1], ws), " but ", offset)
 		}
@@ -54,6 +54,30 @@ func TestGetPPageOfftest(t *testing.T) {
 		}
 	}
 }
+
+func TestPOtoXY(t *testing.T) {
+	ws := uint(128)
+	cases := [][3]int64{
+		[3]int64{0,0, 128 * 128 - 128},
+		[3]int64{127,0, KSIZE_16K - 1},
+		[3]int64{0,127, 0},
+		[3]int64{127,127, 127},
+		[3]int64{127,-128, KSIZE_16K - 1},
+		[3]int64{-128,127, 0},
+		[3]int64{-128,-128, 128 * 128 - 128},
+	}
+	for _, v := range cases {
+		x :=  POtoWX(uint(v[2]), WtoP(v[0], ws), ws)
+		y :=  POtoWY(uint(v[2]), WtoP(v[1], ws), ws)
+		if x != v[0] {
+			t.Error("x ", v, ", px = ", WtoP(v[0], ws), ", py = ", WtoP(v[1], ws), " but ", x)
+		}
+		if y != v[1] {
+			t.Error("y ", v, ", px = ", WtoP(v[0], ws), ", py = ", WtoP(v[1], ws), " but ", y)
+		}
+	}
+}
+
 
 func fillPageDead(pb *PageTree, p *PageTile, z byte) {
 	for i := uint(0) ; i < pb.wsize * pb.wsize ; i ++ {
@@ -127,7 +151,7 @@ func TestMVXY(t *testing.T) {
 		[5]int64{math.MinInt64,  -1, math.MinInt64, math.MaxInt64, math.MaxInt64},
 	}
 	for _, v := range cases {
-		nx := mvXY1Around(v[0], v[1], v[2], v[3])
+		nx := MvXY1(v[0], v[1], v[2], v[3])
 		if nx != v[4] {
 			t.Error("nx ", v, " but ", nx)
 		}

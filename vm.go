@@ -64,9 +64,10 @@ func (vm VM) ReservePage() *Page {
 	var p *Page
 
 	if vm.reclaimed.Len() > 0 {
-		el := vm.reclaimed.Front()
-		vm.reclaimed.Remove(el)
-		p = el.Value.(*Page)
+		p = vm.reclaimed.Remove(vm.reclaimed.Front()).(*Page)
+		// memset 0 for reclaimed page (i beleive this anti pattern)
+		pp := ([]byte)(*p)
+		for i := range pp { pp[i] = 0 }
 	} else {
 		np := vm.NewPage()
 		p = &np

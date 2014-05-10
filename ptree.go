@@ -109,9 +109,9 @@ func (pb *PageTree) QueryPage(px int64, py int64) *PageTile {
 	return pb.root.queryPage(px, py, NewAABBPXY(px, py, pb.wsize))
 }
 
-func (qb *PageTree) Reduce(f func(a interface{}, t PageTile) interface{}, v interface{}) interface{} {
+func (qb *PageTree) Reduce(f func(a interface{}, t *PageTile) interface{}, v interface{}) interface{} {
 	return qb.root.reduce(func(a interface{}, t QuadElement) interface{} {
-		return f(a, t.(PageTile))
+		return f(a, t.(*PageTile))
 	}, v)
 }
 
