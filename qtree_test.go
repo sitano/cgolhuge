@@ -188,6 +188,24 @@ func TestQuadTreePoints(t *testing.T) {
 	}
 }
 
+func TestQuadTreeReduce(t *testing.T) {
+	var rects []AABB = randomAABBes(100, world, 5)
+	qt := NewQuadTree(world)
+
+	for _, v := range rects {
+		qt.Add(v)
+	}
+
+	count := qt.Reduce(func(c interface{}, e QuadElement) interface{} {
+		return c.(int) + 1
+	}, 0).(int)
+
+	if count != 100 {
+		t.Error("Reduce wrong abount 100 inner rects != ", count)
+	}
+}
+
+
 // A set of 10 million randomly distributed rectangles of avg size 5
 var boxes10M []AABB
 

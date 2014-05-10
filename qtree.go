@@ -3,6 +3,7 @@ Based on work of Volker Poplawski, 2013 (https://github.com/volkerp/goquadtree)
 */
 package main
 
+import "container/list"
 import "math"
 import "fmt"
 
@@ -146,6 +147,10 @@ func (qb *QuadTree) Query(bbox AABB) (values []QuadElement) {
 	return qb.root.query(bbox, values)
 }
 
+func (qb *QuadTree) Reduce(f func(a interface{}, t QuadElement) interface{}, v interface{}) interface{} {
+	return qb.root.reduce(f, v)
+}
+
 func (tile *QuadTile) add(v QuadElement) {
 	// look for sub-tile directly below this tile to accomodate value.
 	if i := tile.findChildIndex(v.getAABB()); i < 0 {
@@ -231,4 +236,24 @@ func (tile *QuadTile) query(qbox AABB, ret []QuadElement) []QuadElement {
 	}
 
 	return ret
+}
+
+func (qt *QuadTile) reduce(f func(a interface{}, t QuadElement) interface{}, v interface{}) interface{} {
+	stack := list.New()
+	stack.PushFront(qt)
+	for stack.Len() > 0 {
+		tile := stack.Front().Value.(*QuadTile)
+		stack.Remove(stack.Front())
+
+		for _, t := range tile.contents {
+			v = f(v, t)
+		}
+
+		if tile.childs[_TOPRIGHT] != nil {
+			for _, child := range tile.childs {
+				stack.PushFront(child)
+			}
+		}
+	}
+	return v
 }

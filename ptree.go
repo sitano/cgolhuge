@@ -109,6 +109,12 @@ func (pb *PageTree) QueryPage(px int64, py int64) *PageTile {
 	return pb.root.queryPage(px, py, NewAABBPXY(px, py, pb.wsize))
 }
 
+func (qb *PageTree) Reduce(f func(a interface{}, t PageTile) interface{}, v interface{}) interface{} {
+	return qb.root.reduce(func(a interface{}, t QuadElement) interface{} {
+		return f(a, t.(PageTile))
+	}, v)
+}
+
 func (tile *QuadTile) queryPage(px int64, py int64, qbox AABB) *PageTile {
 	// end recursion if this tile does not intersect the query range
 	if ! tile.Intersects(qbox) {
