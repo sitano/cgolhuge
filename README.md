@@ -61,10 +61,28 @@ Persistance:
 * hashlife
 * cache on quad tree nodes
 
-## Implementation
+## Implementation (version 1)
 
 * virtual memory pages 2^n (128x128 to match start window size = 16kb page)
 * views: quad tree view (coords? origin)
-* world ticker bitwised, 3 bit per life
+* world ticker bitwised, 2 bit per life
 * save / load rle???
 * data compression
+
+### Version 1 benchmarks (Mac Book Air)
+
+BenchmarkWorldStep2pages	      20	  77425383 ns/op
+BenchmarkWorldStep1pages	      50	  37956369 ns/op
+BenchmarkWorldReadPage2	     500	   5231006 ns/op
+BenchmarkWorldRWPage	     500	   7288380 ns/op
+BenchmarkWorldRWPageRaw8x8	   10000	    130273 ns/op
+BenchmarkWorldRWPageRaw3x1	   50000	     60944 ns/op
+BenchmarkWorldRPageRaw	  200000	     12766 ns/op
+BenchmarkWorldRPageRaw_ConvUint64	   50000	     50514 ns/op
+BenchmarkWorldRWPageRaw	  100000	     25576 ns/op
+
+So, raw full scan of 16kb with 8x8 read and 1 write per op lasts 130000ns/page.
+Raw read 1 byte per op 12766ns/page.
+
+If page fill factor is <1% (16kb <-> 4 gliders (20)) => we can skip whole page with
+it's def raw read speed 1 page read = 13k ns/page+lookup.
