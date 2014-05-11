@@ -1,6 +1,9 @@
 package main
 
 import "math"
+import (
+	"fmt"
+)
 
 type PageTree struct {
 	QuadTree
@@ -25,6 +28,10 @@ type PageTile struct {
 // Make AABB implement the QuadElement interface
 func (pt PageTile) getAABB() AABB {
 	return pt.AABB
+}
+
+func (b PageTree) String() string {
+	return fmt.Sprint(b.getAABB())
 }
 
 func NewPageTree(bbox AABB, wsize uint) PageTree {
@@ -55,11 +62,11 @@ func NewAABBPXY(px int64, py int64, wsize uint) AABB {
 	// Check overflow
 	if px > 0 && bbox.MinX < 0 && bbox.MaxX > 0 {
 		maxX := int64(math.MaxInt64)
-		maxY := bbox.MaxY
-		if py > 0 && bbox.MinY < 0 && bbox.MaxY > 0 {
-			maxY = math.MaxInt64
-		}
-		bbox = NewAABB(bbox.MaxX, maxX, bbox.MaxY, maxY)
+		bbox = NewAABB(bbox.MaxX, maxX, bbox.MinY, bbox.MaxY)
+	}
+	if py > 0 && bbox.MinY < 0 && bbox.MaxY > 0 {
+		maxY := int64(math.MaxInt64)
+		bbox = NewAABB(bbox.MinX, bbox.MaxX, bbox.MaxY, maxY)
 	}
 	return bbox
 }
@@ -181,13 +188,11 @@ func (pb *PageTree) MaxPagesY() uint64 {
 }
 
 func (pt *PageTile) SetByte(i uint, v byte) {
-	b := *(pt.p)
-	b[i] = v
+	(*pt.p)[i] = v
 }
 
 func (pt *PageTile) GetByte(i uint) byte {
-	b := *(pt.p)
-	return b[i]
+	return (*pt.p)[i]
 }
 
 func (pt *PageTile) GetAlive() uint {

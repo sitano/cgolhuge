@@ -85,7 +85,7 @@ func (lw *LifeWorld) Step() {
 		// Prevent reclamation during processing
 		pt.alive = 1
 
-		for i := uint(0) ; i <= ks; i ++ {
+		for i := uint(0) ; i < ks; i ++ {
 			x := POtoWX(i, pt.px, ws)
 			y := POtoWY(i, pt.py, ws)
 

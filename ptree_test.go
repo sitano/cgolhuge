@@ -58,11 +58,16 @@ func TestLastPage(t *testing.T) {
 	px = int64((uint64(math.MaxInt64) + 1) / uint64(vm.wsize)) - 1
 	py = px
 	pt = NewPageTile(p, vm.PageWidth(), px, py)
-	fmt.Print("pt last TR: wsize = ", vm.wsize," px = ", px, " pt = ", pt,"\n")
+	fmt.Print("pt last +1, + 1: wsize = ", vm.wsize," px = ", px, " pt = ", pt,"\n")
 
 	if pt.getAABB().MinX < 0 || pt.getAABB().MinY < 0{
 		t.Error("Invalid AABB overflow")
 	}
+
+	px = WtoP(math.MinInt64, vm.wsize)
+	py = WtoP(math.MaxInt64, vm.wsize)
+	pt = NewPageTile(p, vm.PageWidth(), px, py)
+	fmt.Print("pt last -1, +1: wsize = ", vm.wsize," px = ", px, " pt = ", pt,"\n")
 }
 
 func TestNewPageTreeMaxInt64(t *testing.T) {
@@ -95,10 +100,10 @@ func TestNewPageTile(t *testing.T) {
 	pt = NewPageTile(p, vm.PageWidth(), -1, -1)
 	if pt.px != -1 || pt.py != -1 { t.Error("New page tile have invalid pt coords") }
 	if pt.MinX != -128 || pt.MinY != -128 || pt.MaxX != 0 || pt.MaxY != 0 {
-		t.Error("New page have invalid rect")
+		t.Error("New page have invalid rect", pt)
 	}
 	if pt.getAABB().SizeX() != 128 || pt.getAABB().SizeY() != 128{
-		t.Error("New page have invalid rect size")
+		t.Error("New page have invalid rect size", pt.AABB)
 	}
 
 }
