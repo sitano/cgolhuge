@@ -26,12 +26,12 @@ type PageTile struct {
 }
 
 // Make AABB implement the QuadElement interface
-func (pt PageTile) getAABB() AABB {
+func (pt *PageTile) GetAABB() AABB {
 	return pt.AABB
 }
 
 func (b PageTree) String() string {
-	return fmt.Sprint(b.getAABB())
+	return fmt.Sprint(b.AABB)
 }
 
 func NewPageTree(bbox AABB, wsize uint) PageTree {
@@ -89,15 +89,11 @@ func (pb *PageTree) Add(pt *PageTile) {
 }
 
 func (pb *PageTree) Remove(pt *PageTile) bool {
-	if pb.root.remove(pt.px, pt.py, pt.AABB) {
-		pb.count --
-		return true
-	}
-	return false
+	return pb.RemovePXY(pt.px, pt.py)
 }
 
 func (pb *PageTree) RemovePXY(px int64, py int64) bool {
-	if pb.root.remove(px, py, NewAABBPXY(px, py, pb.wsize)) {
+	if pb.root.remove(px, py, PtoW(px, pb.wsize), PtoW(py, pb.wsize)) {
 		pb.count --
 		return true
 	}
@@ -108,12 +104,12 @@ func (pb *PageTree) Count() uint64 {
 	return pb.count
 }
 
-func (pb *PageTree) getAABB() AABB {
-	return pb.root.getAABB()
+func (pb *PageTree) GetAABB() *AABB {
+	return &pb.AABB
 }
 
 func (pb *PageTree) QueryPage(px int64, py int64) *PageTile {
-	return pb.root.queryPage(px, py, NewAABBPXY(px, py, pb.wsize))
+	return pb.root.queryPage(px, py, PtoW(px, pb.wsize), PtoW(py, pb.wsize))
 }
 
 func (qb *PageTree) Reduce(f func(a interface{}, t *PageTile) interface{}, v interface{}) interface{} {
@@ -122,9 +118,9 @@ func (qb *PageTree) Reduce(f func(a interface{}, t *PageTile) interface{}, v int
 	}, v)
 }
 
-func (tile *QuadTile) queryPage(px int64, py int64, qbox AABB) *PageTile {
+func (tile *QuadTile) queryPage(px int64, py int64, x int64, y int64) *PageTile {
 	// end recursion if this tile does not intersect the query range
-	if ! tile.Intersects(qbox) {
+	if ! tile.ContainsPoint(x, y) {
 		return nil
 	}
 
@@ -139,7 +135,7 @@ func (tile *QuadTile) queryPage(px int64, py int64, qbox AABB) *PageTile {
 	// recurse into childs (if any)
 	if tile.childs[_TOPRIGHT] != nil {
 		for _, child := range tile.childs {
-			ret := child.queryPage(px, py, qbox)
+			ret := child.queryPage(px, py, x, y)
 			if ret != nil { return ret }
 		}
 	}
@@ -147,9 +143,9 @@ func (tile *QuadTile) queryPage(px int64, py int64, qbox AABB) *PageTile {
 	return nil
 }
 
-func (tile *QuadTile) remove(px int64, py int64, qbox AABB) bool {
+func (tile *QuadTile) remove(px int64, py int64, x int64, y int64) bool {
 	// end recursion if this tile does not intersect the query range
-	if ! tile.Intersects(qbox) {
+	if ! tile.ContainsPoint(x, y) {
 		return false
 	}
 
@@ -167,7 +163,7 @@ func (tile *QuadTile) remove(px int64, py int64, qbox AABB) bool {
 	// recurse into childs (if any)
 	if tile.childs[_TOPRIGHT] != nil {
 		for _, child := range tile.childs {
-			ret := child.remove(px, py, qbox)
+			ret := child.remove(px, py, x, y)
 			if ret { return ret }
 		}
 	}
@@ -176,13 +172,13 @@ func (tile *QuadTile) remove(px int64, py int64, qbox AABB) bool {
 }
 
 func (pb *PageTree) MaxPagesX() uint64 {
-	bbox := pb.getAABB()
+	bbox := pb.AABB
 	ws := uint64(pb.wsize)
 	return Abs(bbox.MinX) / ws + Abs(bbox.MaxX) / ws
 }
 
 func (pb *PageTree) MaxPagesY() uint64 {
-	bbox := pb.getAABB()
+	bbox := pb.AABB
 	ws := uint64(pb.wsize)
 	return Abs(bbox.MinY) / ws + Abs(bbox.MaxY) / ws
 }

@@ -109,7 +109,7 @@ func (lw *LifeWorld) Step() {
 		}
 
 		// Check page edges (special case when there is no page)
-		lw.TryEdgeLines(new, pt.getAABB())
+		lw.TryEdgeLines(new, pt.GetAABB())
 
 		return a.(uint64) + uint64(pt.alive)
 	}, lw.population).(uint64)
@@ -154,7 +154,7 @@ func (lw *LifeWorld) TryEdgeLines(ll *list.List, pbb AABB) {
 }
 
 func (lw *LifeWorld) TryEdgePoint(ll *list.List, x int64, y int64, dx int64, dy int64) {
-	gbb := lw.v.pb.getAABB()
+	gbb := lw.v.pb.GetAABB()
 	ws := lw.v.vm.wsize
 	tx := MvXY1(x, dx, gbb.MinX, gbb.MaxX)
 	ty := MvXY1(y, dy, gbb.MinY, gbb.MaxY)

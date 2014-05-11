@@ -60,7 +60,7 @@ func TestLastPage(t *testing.T) {
 	pt = NewPageTile(p, vm.PageWidth(), px, py)
 	fmt.Print("pt last +1, + 1: wsize = ", vm.wsize," px = ", px, " pt = ", pt,"\n")
 
-	if pt.getAABB().MinX < 0 || pt.getAABB().MinY < 0{
+	if pt.AABB.MinX < 0 || pt.AABB.MinY < 0{
 		t.Error("Invalid AABB overflow")
 	}
 
@@ -72,7 +72,7 @@ func TestLastPage(t *testing.T) {
 
 func TestNewPageTreeMaxInt64(t *testing.T) {
 	pt := NewPageTree(NewAABBMax(), 128)
-	fmt.Print("pt max = ", pt.getAABB(), ", sizex = ", pt.getAABB().SizeX(),"\n")
+	fmt.Print("pt max = ", pt.AABB, ", sizex = ", pt.AABB.SizeX(),"\n")
 }
 
 func TestNewPageTile(t *testing.T) {
@@ -84,7 +84,7 @@ func TestNewPageTile(t *testing.T) {
 	if pt.MinX != 0 || pt.MinY != 0 || pt.MaxX != 128 || pt.MaxY != 128 {
 		t.Error("New page have invalid rect")
 	}
-	if pt.getAABB().SizeX() != 128 || pt.getAABB().SizeY() != 128{
+	if pt.AABB.SizeX() != 128 || pt.AABB.SizeY() != 128{
 		t.Error("New page have invalid rect size")
 	}
 
@@ -93,7 +93,7 @@ func TestNewPageTile(t *testing.T) {
 	if pt.MinX != 128 || pt.MinY != 128 || pt.MaxX != 128 + 128 || pt.MaxY != 128 + 128 {
 		t.Error("New page have invalid rect")
 	}
-	if pt.getAABB().SizeX() != 128 || pt.getAABB().SizeY() != 128{
+	if pt.AABB.SizeX() != 128 || pt.AABB.SizeY() != 128{
 		t.Error("New page have invalid rect size")
 	}
 
@@ -102,7 +102,7 @@ func TestNewPageTile(t *testing.T) {
 	if pt.MinX != -128 || pt.MinY != -128 || pt.MaxX != 0 || pt.MaxY != 0 {
 		t.Error("New page have invalid rect", pt)
 	}
-	if pt.getAABB().SizeX() != 128 || pt.getAABB().SizeY() != 128{
+	if pt.AABB.SizeX() != 128 || pt.AABB.SizeY() != 128{
 		t.Error("New page have invalid rect size", pt.AABB)
 	}
 
@@ -125,7 +125,7 @@ func fillPageTree(t *testing.T, vm *VM) PageTree {
 	for x := int64(-20) ; x <= 20; x ++ {
 		for y := int64(-20) ; y <= 20 ; y++ {
 			pt := NewPageTile(vm.ReservePage(), vm.PageWidth(), x, y)
-			if ! pt.Intersects(pb.getAABB()) {
+			if ! pt.Intersects(pb.AABB) {
 				t.Error("This tile ", pt, " does not intersect whole tree ", pb)
 			}
 			pb.Add(&pt)

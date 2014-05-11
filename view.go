@@ -139,7 +139,7 @@ func ReadStateZ(b byte, z byte) byte {
 
 // dx, dy = + / - 1
 func (vw *WorldView) NextTo(x int64, y int64, z byte, dx int64, dy int64) byte {
-	bb := vw.pb.getAABB()
+	bb := vw.pb.GetAABB()
 	return vw.Get(MvXY1(x, dx, bb.MinX, bb.MaxX), MvXY1(y, dy, bb.MinY, bb.MaxY), z)
 }
 

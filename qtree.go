@@ -63,11 +63,11 @@ func NewAABBMax() AABB {
 }
 
 // Make AABB implement the QuadElement interface
-func (b AABB) getAABB() AABB {
+func (b AABB) GetAABB() AABB {
 	return b
 }
 
-func (b AABB) SizeX() uint64 {
+func (b *AABB) SizeX() uint64 {
 	// Check overflow
 	if  b.MinX == math.MinInt64 && b.MaxX == math.MaxInt64 {
 		return math.MaxUint64
@@ -75,7 +75,7 @@ func (b AABB) SizeX() uint64 {
 	return Abs(b.MaxX - b.MinX)
 }
 
-func (b AABB) SizeY() uint64 {
+func (b *AABB) SizeY() uint64 {
 	// Check overflow
 	if  b.MinY == math.MinInt64 && b.MaxY == math.MaxInt64 {
 		return math.MaxUint64
@@ -84,21 +84,25 @@ func (b AABB) SizeY() uint64 {
 }
 
 // Returns true if o intersects this
-func (b AABB) Intersects(o AABB) bool {
+func (b *AABB) Intersects(o AABB) bool {
 	return b.MinX < o.MaxX && b.MinY < o.MaxY &&
 		b.MaxX > o.MinX && b.MaxY > o.MinY
 }
 
 // Returns true if o is within this
-func (b AABB) Contains(o AABB) bool {
+func (b *AABB) Contains(o AABB) bool {
 	return b.MinX <= o.MinX && b.MinY <= o.MinY &&
 		b.MaxX >= o.MaxX && b.MaxY >= o.MaxY
 }
 
+func (b *AABB) ContainsPoint(x int64, y int64) bool {
+	return b.MinX <= x && b.MinY <= y &&
+		b.MaxX >= x && b.MaxY >= y
+}
 
 // QuadTree expects its values to implement the QuadElement interface.
 type QuadElement interface {
-	getAABB() AABB
+	GetAABB() AABB
 }
 
 // quad-tile / node of the quad-tree
@@ -111,6 +115,8 @@ type QuadTile struct {
 }
 
 type QuadTree struct {
+	AABB
+
 	root QuadTile
 	count uint64
 }
@@ -118,7 +124,7 @@ type QuadTree struct {
 // Constructs an empty quad-tree
 // bbox specifies the extends of the coordinate system.
 func NewQuadTree(bbox AABB) QuadTree {
-	qt := QuadTree{ QuadTile{AABB:bbox}, 0 }
+	qt := QuadTree{ bbox, QuadTile{AABB:bbox}, 0 }
 	return qt
 }
 
@@ -127,8 +133,6 @@ func (qb *QuadTree) Add(v QuadElement) {
 	qb.root.add(v)
 	qb.count ++
 }
-
-// TODO: remove
 
 func (qb *QuadTree) Count() uint64 {
 	return qb.count
@@ -153,7 +157,7 @@ func (qb *QuadTree) Reduce(f func(a interface{}, t QuadElement) interface{}, v i
 
 func (tile *QuadTile) add(v QuadElement) {
 	// look for sub-tile directly below this tile to accomodate value.
-	if i := tile.findChildIndex(v.getAABB()); i < 0 {
+	if i := tile.findChildIndex(v.GetAABB()); i < 0 {
 		// no suitable sub-tile for value found.
 		// either this tile has no childs or
 		// value does not fit in any subtile.
@@ -223,7 +227,7 @@ func (tile *QuadTile) query(qbox AABB, ret []QuadElement) []QuadElement {
 
 	// return candidates at this tile
 	for _, v := range tile.contents {
-		if qbox.Intersects(v.getAABB()) {
+		if qbox.Intersects(v.GetAABB()) {
 			ret = append(ret, v)
 		}
 	}
