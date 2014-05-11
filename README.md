@@ -86,3 +86,17 @@ Raw read 1 byte per op 12766ns/page.
 
 If page fill factor is <1% (16kb <-> 4 gliders (20)) => we can skip whole page with
 it's def raw read speed 1 page read = 13k ns/page+lookup.
+
+### Version 1 bench + norealloc on page query
+
+BenchmarkWorldStep2pages	      50	  30619028 ns/op
+BenchmarkWorldStep1pages	     100	  14154527 ns/op
+BenchmarkWorldReadPage2	    1000	   2108376 ns/op
+BenchmarkWorldRWPage	     500	   4579450 ns/op
+BenchmarkWorldRWPageRaw8x8	   10000	    137833 ns/op
+BenchmarkWorldRWPageRaw3x1	   50000	     61063 ns/op
+BenchmarkWorldRPageRaw	  200000	     12787 ns/op
+BenchmarkWorldRPageRaw_ConvUint64	   50000	     50690 ns/op
+BenchmarkWorldRWPageRaw	  100000	     25515 ns/op
+
+Min read speed 12k ns/page -> 1 ms = 10^6 ns / 12k ns ~ 76 scans of empty pages per 1 ms -> 76k/sec max
