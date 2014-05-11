@@ -73,42 +73,35 @@ func TestVM(t *testing.T) {
 	vm := NewVM(KSIZE_16K)
 
 	if vm.Pages() != 0 { t.Error("No pages") }
-	if vm.Reclaimed() != 0 { t.Error("No reclaimed") }
 	if vm.Reserved() != 0 { t.Error("No reserved") }
 
 	p1 := vm.ReservePage()
 
 	if vm.Pages() != 1 { t.Error("Pages 1") }
-	if vm.Reclaimed() != 0 { t.Error("No reclaimed") }
 	if vm.Reserved() != 1 { t.Error("Reserved 1") }
 	if p1 == nil { t.Error("Reserve failed") }
 	if len(*p1) != KSIZE_16K { t.Error("Invalid page size") }
 
 	vm.ReclaimPage(p1)
 
-	if vm.Pages() != 1 { t.Error("Pages 1") }
-	if vm.Reclaimed() != 1 { t.Error("Reclaimed 1") }
+	if vm.Pages() != 0 { t.Error("Pages 1") }
 	if vm.Reserved() != 0 { t.Error("Reserved 0") }
 
-	p2 := vm.ReservePage()
+	p1 = vm.ReservePage()
 
 	if vm.Pages() != 1 { t.Error("Pages 1") }
-	if vm.Reclaimed() != 0 { t.Error("No reclaimed") }
 	if vm.Reserved() != 1 { t.Error("Reserved 1") }
-	if p1 != p2 { t.Error("Reserve reclaimed failed") }
 
 	p3 := vm.ReservePage()
 
 	if vm.Pages() != 2 { t.Error("Pages 2") }
-	if vm.Reclaimed() != 0 { t.Error("No reclaimed") }
 	if vm.Reserved() != 2 { t.Error("Reserved 2") }
 	if p3 == nil { t.Error("Reserve failed") }
 
 	vm.ReclaimPage(p1)
 	vm.ReclaimPage(p3)
 
-	if vm.Pages() != 2 { t.Error("Pages 2") }
-	if vm.Reclaimed() != 2 { t.Error("Reclaimed 2") }
+	if vm.Pages() != 0 { t.Error("Pages 2") }
 	if vm.Reserved() != 0 { t.Error("Reserved 0") }
 }
 

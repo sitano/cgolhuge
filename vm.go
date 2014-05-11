@@ -20,7 +20,6 @@ type VM struct {
 	wsbits uint
 
 	reserved *list.List
-	reclaimed *list.List
 }
 
 // lg(ksize) must be div by 2
@@ -34,12 +33,11 @@ func NewVM(ksize uint) VM {
 		wsize: ws,
 		wsbits: bits(ws),
 		reserved: list.New(),
-		reclaimed: list.New(),
 	}
 }
 
 func (vm VM) NewPage() Page {
-	return Page(make([]byte, vm.ksize, vm.ksize))
+	return make([]byte, vm.ksize, vm.ksize)
 }
 
 func searchPage(l *list.List, p *Page) *list.Element {
@@ -61,21 +59,10 @@ func pow2ui64(n uint) uint {
 
 // Take any free page or create one and put it into reserved list
 func (vm VM) ReservePage() *Page {
-	var p *Page
-
-	if vm.reclaimed.Len() > 0 {
-		p = vm.reclaimed.Remove(vm.reclaimed.Front()).(*Page)
-		// memset 0 for reclaimed page (i beleive this anti pattern)
-		pp := ([]byte)(*p)
-		for i := range pp { pp[i] = 0 }
-	} else {
-		np := vm.NewPage()
-		p = &np
-	}
-
-	vm.reserved.PushBack(p)
-
-	return p
+	p := vm.NewPage()
+	pp:= &p
+	vm.reserved.PushBack(pp)
+	return pp
 }
 
 func (vm VM) ReclaimPage(p *Page) bool {
@@ -84,20 +71,15 @@ func (vm VM) ReclaimPage(p *Page) bool {
 		return false
 	}
 	vm.reserved.Remove(el)
-	vm.reclaimed.PushBack(p)
 	return true
 }
 
 func (vm VM) Pages() int {
-	return vm.reserved.Len() + vm.reclaimed.Len()
+	return vm.reserved.Len()
 }
 
 func (vm VM) Reserved() int {
 	return vm.reserved.Len()
-}
-
-func (vm VM) Reclaimed() int {
-	return vm.reclaimed.Len()
 }
 
 func (vm VM) PageSize() uint {

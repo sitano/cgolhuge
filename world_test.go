@@ -343,6 +343,32 @@ func BenchmarkWorldRWPageRaw8x8(b *testing.B) {
 	}
 }
 
+
+func BenchmarkWorldRWPageRaw3x1(b *testing.B) {
+	b.StopTimer()
+	w := NewLifeWorldXY(NewAABBMax())
+	//w.Set(1, 0, w.Layer(), LIFE)
+	w.Set(0, 0, w.Layer(), LIFE)
+	w.Set(1, 0, w.Layer(), LIFE)
+	w.Set(0, 1, w.Layer(), LIFE)
+	w.Set(1, 1, w.Layer(), LIFE)
+
+	lw := &w
+
+	b.StartTimer()
+	pt := w.v.pb.QueryPage(0, 0)
+
+	for i := 0 ; i < b.N; i ++ {
+		ks := lw.v.vm.ksize
+		pp := *pt.p
+
+		for i := uint(256) ; i < ks - 256; i ++ {
+			st := pp[i - 1] + pp[i] + pp[i + 1]
+			pp[i] = st % 2
+		}
+	}
+}
+
 var r byte
 
 func BenchmarkWorldRPageRaw(b *testing.B) {
