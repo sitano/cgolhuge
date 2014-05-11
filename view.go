@@ -1,7 +1,5 @@
 package main
 
-import "math"
-
 const (
 	DEAD = byte(0)
 	LIFE = byte(1)
@@ -146,12 +144,18 @@ func (vw *WorldView) NextTo(x int64, y int64, z byte, dx int64, dy int64) byte {
 func MvXY1(x int64, dx int64, min int64, max int64) int64 {
 	nx := x + dx
 
-	if x >= max - 1 && dx > 0 {
-		nx = min
+	if max > 0 && max + 1 < 0 {
+		if x >= max && dx > 0 {
+			nx = min
+		}
+	} else {
+		if x >= max - 1 && dx > 0 {
+			nx = min
+		}
 	}
 
 	if x <= min && dx < 0 {
-		if max == math.MaxInt64 && min == math.MinInt64 {
+		if max > 0 && max + 1 < 0 {
 			nx = max
 		} else {
 			nx = max - 1
@@ -159,12 +163,11 @@ func MvXY1(x int64, dx int64, min int64, max int64) int64 {
 	}
 
 	return nx
-
 }
 
 func (vw *WorldView) LifeSumAt(x int64, y int64, z byte) byte {
 	// Just sum them up as DEAD = 0, LIFE = 1
 	return vw.NextTo(x, y, z, -1, +1) + vw.NextTo(x, y, z, 0, +1) + vw.NextTo(x, y, z, +1, +1) +
-		vw.NextTo(x, y, z, -1, 0) + 0 + vw.NextTo(x, y, z, +1, 0) +
+		vw.NextTo(x, y, z, -1, 0) + 0 +                           vw.NextTo(x, y, z, +1, 0) +
 		vw.NextTo(x, y, z, -1, -1) + vw.NextTo(x, y, z, 0, -1) + vw.NextTo(x, y, z, +1, -1)
 }

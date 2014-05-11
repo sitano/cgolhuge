@@ -100,7 +100,7 @@ func TestWorldStep3(t *testing.T) {
 	//		NewAABB(math.MaxInt64 - 3, math.MaxInt64,
 	//			math.MaxInt64 - 3, math.MaxInt64)))
 	for i := 0 ; i < 4 ; i ++ {
-		//w.Step()
+		w.Step()
 
 		//printPages(&w)
 		//fmt.Print("Generation ", w.Generation(), "\n", printWorld(&w,
@@ -110,6 +110,33 @@ func TestWorldStep3(t *testing.T) {
 	if w.Get(math.MaxInt64, math.MaxInt64, w.Layer()) != LIFE { t.Error("No life at 0, 0") }
 	if w.Get(math.MaxInt64 - 1, math.MaxInt64, w.Layer()) != LIFE { t.Error("No life at 1, 0") }
 	if w.Get(math.MinInt64, math.MaxInt64, w.Layer()) != LIFE { t.Error("No life at-1, 0") }
+}
+
+func printGlider(w *LifeWorld, x int64, y int64) {
+	b := w.v.pb.getAABB()
+	w.Set(x, y, w.Layer(), LIFE)
+	x = MvXY1(x, 1, b.MinX, b.MaxX)
+	w.Set(x, y, w.Layer(), LIFE)
+	x = MvXY1(x, 1, b.MinX, b.MaxX)
+	w.Set(x, y, w.Layer(), LIFE)
+	y = MvXY1(y, 1, b.MinY, b.MaxY)
+	w.Set(x, y, w.Layer(), LIFE)
+	x = MvXY1(x, -1, b.MinX, b.MaxX)
+	y = MvXY1(y, 1, b.MinY, b.MaxY)
+	w.Set(x, y, w.Layer(), LIFE)
+}
+
+func TestWorldStep4(t *testing.T) {
+	w := NewLifeWorldXY(NewAABBMax())
+	printGlider(&w, 3, 3)
+	//printPages(&w)
+	//fmt.Print("Generation ", w.Generation(), "\n", printWorld(&w, NewAABB(0, 16, 0, 8)))
+	for i := 0 ; i < 4 ; i ++ {
+		w.Step()
+
+		//printPages(&w)
+		//fmt.Print("Generation ", w.Generation(), "\n", printWorld(&w, NewAABB(0, 16, 0, 8)))
+	}
 }
 
 func BenchmarkWorldStep2pages(b *testing.B) {

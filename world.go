@@ -140,17 +140,17 @@ func (lw *LifeWorld) PurgePoints(ll *list.List, z byte) {
 func (lw *LifeWorld) TryEdgeLines(ll *list.List, pbb AABB) {
 	maxX := pbb.MaxX - 1
 	maxY := pbb.MaxY - 1
-	if pbb.SizeX() == math.MaxUint64 && pbb.MaxX == math.MaxInt64 { maxX = math.MaxInt64 }
-	if pbb.SizeY() == math.MaxUint64 && pbb.MaxY == math.MaxInt64 { maxY = math.MaxInt64 }
+	if pbb.MaxX == math.MaxInt64 { maxX = math.MaxInt64 }
+	if pbb.MaxY == math.MaxInt64 { maxY = math.MaxInt64 }
 	lw.TryEdgePoint(ll, pbb.MinX, pbb.MinY, -1, -1)
 	lw.TryEdgePoint(ll, pbb.MinX, maxY,     -1, +1)
 	lw.TryEdgePoint(ll, maxX, pbb.MinY,     +1, -1)
 	lw.TryEdgePoint(ll, maxX, maxY,         +1, +1)
-	for x := pbb.MinX ; x <= maxX; x++ {
+	for x := pbb.MinX ; x <= maxX && x >= pbb.MinX; x++ {
 		lw.TryEdgePoint(ll, x, pbb.MinY, 0, -1)
 		lw.TryEdgePoint(ll, x, maxY, 0, +1)
 	}
-	for y := pbb.MinY ; y <= maxY; y++ {
+	for y := pbb.MinY ; y <= maxY && y >= pbb.MinY; y++ {
 		lw.TryEdgePoint(ll, pbb.MinX, y, -1, 0)
 		lw.TryEdgePoint(ll, maxX,     y, +1, 0)
 	}
