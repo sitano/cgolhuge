@@ -22,13 +22,14 @@ type View interface {
 type WorldView struct {
 	vm *VM
 	pb *PageTree
+	autoReclaim bool
 }
 
 func NewWorldView(vm *VM, pb *PageTree) WorldView {
 	if vm.wsize != pb.wsize {
 		panic("VM wsize must match PageTree wsize")
 	}
-	return WorldView{vm, pb}
+	return WorldView{vm, pb, true}
 }
 
 func (wv WorldView) Set(x int64, y int64, z byte, t byte) {
@@ -64,15 +65,17 @@ func (wv WorldView) Set(x int64, y int64, z byte, t byte) {
 		data = WriteStateZ(data, z, t)
 		pt.SetByte(pboffset, data)
 
-		switch t {
-		case DEAD:
-			pt.SetAlive(pt.GetAlive() - 1)
-		case LIFE:
-			pt.SetAlive(pt.GetAlive() + 1)
+		if wv.autoReclaim {
+			switch t {
+			case DEAD:
+				pt.SetAlive(pt.GetAlive() - 1)
+			case LIFE:
+				pt.SetAlive(pt.GetAlive() + 1)
+			}
+
+			wv.TryReclaim(pt)
 		}
 	}
-
-	wv.TryReclaim(pt)
 }
 
 func (wv *WorldView) TryReclaim(pt *PageTile) {

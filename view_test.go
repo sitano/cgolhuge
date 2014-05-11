@@ -76,6 +76,15 @@ func TestPOtoXY(t *testing.T) {
 			t.Error("y ", v, ", px = ", WtoP(v[0], ws), ", py = ", WtoP(v[1], ws), " but ", y)
 		}
 	}
+
+	ws = 128
+	for i := uint(0); i < KSIZE_16K; i ++ {
+		x :=  POtoWX(i, 0, ws)
+		y :=  POtoWY(i, 0, ws)
+		if x < 0 || y < 0 || x > 127 || y > 127 {
+			t.Error("Invalid coords ", x, " ", y)
+		}
+	}
 }
 
 

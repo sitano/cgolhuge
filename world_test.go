@@ -4,6 +4,7 @@ import "testing"
 import "math"
 import (
 	"fmt"
+	"strconv"
 )
 
 func TestNewLifeWorld(t *testing.T) {
@@ -20,6 +21,17 @@ func printWorld(w *LifeWorld, bbox AABB) string {
 			} else {
 				s += "."
 			}
+		}
+		s += "\n"
+	}
+	return s + "\n"
+}
+
+func printHeatMap(w *LifeWorld, bbox AABB) string {
+	s := ""
+	for y := bbox.MaxY ; y >= bbox.MinY && y <= bbox.MaxY ; y -- {
+		for x := bbox.MinX ; x <= bbox.MaxX && x >= bbox.MinX ; x ++ {
+			s += strconv.Itoa(int(w.v.LifeSumAt(x, y, w.Layer())))
 		}
 		s += "\n"
 	}
@@ -83,6 +95,7 @@ func TestWorldStep2(t *testing.T) {
 	if w.Get(1, 0, w.Layer()) != LIFE { t.Error("No life at 1, 0") }
 	if w.Get(-1, 0, w.Layer()) != LIFE { t.Error("No life at-1, 0") }
 	if w.v.vm.reserved.Len() != 2 {
+		printPages(&w)
 		t.Error("Why not 2???")
 	}
 }
@@ -131,11 +144,17 @@ func TestWorldStep4(t *testing.T) {
 	printGlider(&w, 3, 3)
 	//printPages(&w)
 	//fmt.Print("Generation ", w.Generation(), "\n", printWorld(&w, NewAABB(0, 16, 0, 8)))
-	for i := 0 ; i < 4 ; i ++ {
+	for i := 0 ; i < 30 ; i ++ {
 		w.Step()
 
 		//printPages(&w)
 		//fmt.Print("Generation ", w.Generation(), "\n", printWorld(&w, NewAABB(0, 16, 0, 8)))
+		//fmt.Print(printHeatMap(&w, NewAABB(0, 16, 0, 8)))
+	}
+	fmt.Print("Generation ", w.Generation(), "\n", printWorld(&w, NewAABB(0, 16, 0, -8)))
+	if w.v.vm.reserved.Len() != 1 {
+		printPages(&w)
+		t.Error("Why not 1???")
 	}
 }
 

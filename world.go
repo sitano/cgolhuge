@@ -72,18 +72,16 @@ func (lw *LifeWorld) NextZLayer() byte {
 func (lw *LifeWorld) Step() {
 	lw.generation ++
 	lw.population = 0
-	cz := lw.z
+	cz := lw.Layer()
 	nz := lw.NextZLayer()
 	ws := lw.v.pb.wsize
 	ks := lw.v.vm.ksize
 
 	// Process life
+	lw.v.autoReclaim = false
 	new := list.New()
 	lw.population = lw.v.pb.Reduce(func(a interface{}, pt *PageTile) interface{} {
-		population := a.(uint64)
-
-		// Prevent reclamation during processing
-		pt.alive = 1
+		pt.alive = 0
 
 		for i := uint(0) ; i < ks; i ++ {
 			x := POtoWX(i, pt.px, ws)
@@ -97,7 +95,6 @@ func (lw *LifeWorld) Step() {
 				if sum == RULE_BORN {
 					nst = LIFE
 					pt.alive ++
-					population ++
 				}
 			}
 
@@ -105,20 +102,20 @@ func (lw *LifeWorld) Step() {
 				if sum >= RULE_LIVE_MIN && sum <= RULE_LIVE_MAX {
 					nst = LIFE
 					pt.alive ++
-					population ++
 				}
 			}
 
 			lw.Set(x, y, nz, nst)
 		}
 
-		pt.alive --
-
 		// Check page edges (special case when there is no page)
 		lw.TryEdgeLines(new, pt.getAABB())
 
-		return population
+		return a.(uint64) + uint64(pt.alive)
 	}, lw.population).(uint64)
+
+	// Restore before purge
+	lw.v.autoReclaim = true
 
 	// Fill in additional life (egde case)
 	lw.population += uint64(new.Len())
