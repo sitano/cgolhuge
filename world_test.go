@@ -125,36 +125,61 @@ func TestWorldStep3(t *testing.T) {
 	if w.Get(math.MinInt64, math.MaxInt64, w.Layer()) != LIFE { t.Error("No life at-1, 0") }
 }
 
-func printGlider(w *LifeWorld, x int64, y int64) {
-	b := w.v.pb.getAABB()
+func printGliderSE(w *LifeWorld, x int64, y int64) {
 	w.Set(x, y, w.Layer(), LIFE)
-	x = MvXY1(x, 1, b.MinX, b.MaxX)
+	w.Set(x + 1, y, w.Layer(), LIFE)
+	w.Set(x + 2, y, w.Layer(), LIFE)
+	w.Set(x + 2, y + 1, w.Layer(), LIFE)
+	w.Set(x + 1, y + 2, w.Layer(), LIFE)
+}
+
+func printGliderSW(w *LifeWorld, x int64, y int64) {
 	w.Set(x, y, w.Layer(), LIFE)
-	x = MvXY1(x, 1, b.MinX, b.MaxX)
+	w.Set(x + 1, y, w.Layer(), LIFE)
+	w.Set(x + 2, y, w.Layer(), LIFE)
+	w.Set(x, y + 1, w.Layer(), LIFE)
+	w.Set(x + 1, y + 2, w.Layer(), LIFE)
+}
+
+func printGliderNE(w *LifeWorld, x int64, y int64) {
+	w.Set(x+2, y, w.Layer(), LIFE)
+	w.Set(x+2, y + 1, w.Layer(), LIFE)
+	w.Set(x+2, y + 2, w.Layer(), LIFE)
+	w.Set(x+1, y + 2, w.Layer(), LIFE)
+	w.Set(x, y + 1, w.Layer(), LIFE)
+}
+
+func printGliderNW(w *LifeWorld, x int64, y int64) {
 	w.Set(x, y, w.Layer(), LIFE)
-	y = MvXY1(y, 1, b.MinY, b.MaxY)
-	w.Set(x, y, w.Layer(), LIFE)
-	x = MvXY1(x, -1, b.MinX, b.MaxX)
-	y = MvXY1(y, 1, b.MinY, b.MaxY)
-	w.Set(x, y, w.Layer(), LIFE)
+	w.Set(x, y + 1, w.Layer(), LIFE)
+	w.Set(x, y + 2, w.Layer(), LIFE)
+	w.Set(x + 1, y + 2, w.Layer(), LIFE)
+	w.Set(x + 2, y + 1, w.Layer(), LIFE)
 }
 
 func TestWorldStep4(t *testing.T) {
 	w := NewLifeWorldXY(NewAABBMax())
-	printGlider(&w, 3, 3)
+	printGliderSE(&w, 3, 3)
+	printGliderSW(&w, 10, 10)
+	printGliderNW(&w, 3, 10)
+	printGliderNE(&w, 10, 3)
 	//printPages(&w)
-	//fmt.Print("Generation ", w.Generation(), "\n", printWorld(&w, NewAABB(0, 16, 0, 8)))
-	for i := 0 ; i < 30 ; i ++ {
+	//fmt.Print("Generation ", w.Generation(), "\n", printWorld(&w, NewAABB(16, 20, 16, 20)))
+	if w.v.vm.Reserved() != 1 {
+		printPages(&w)
+		t.Error("Why not 1???")
+	}
+	for i := 0 ; i < 100 ; i ++ {
 		w.Step()
 
 		//printPages(&w)
-		//fmt.Print("Generation ", w.Generation(), "\n", printWorld(&w, NewAABB(0, 16, 0, 8)))
-		//fmt.Print(printHeatMap(&w, NewAABB(0, 16, 0, 8)))
+		//fmt.Print("Generation ", w.Generation(), "\n", printWorld(&w, NewAABB(-16, 20, -16, 20)))
+		// fmt.Print(printHeatMap(&w, NewAABB(0, 16, 0, 8)))
 	}
-	fmt.Print("Generation ", w.Generation(), "\n", printWorld(&w, NewAABB(0, 16, 0, -8)))
-	if w.v.vm.reserved.Len() != 1 {
+	//fmt.Print("Generation ", w.Generation(), "\n", printWorld(&w, NewAABB(0, 16, 0, -8)))
+	if w.v.vm.Reserved() != 4 {
 		printPages(&w)
-		t.Error("Why not 1???")
+		t.Error("Why not 3??? ", w.v.vm.Reserved())
 	}
 }
 
