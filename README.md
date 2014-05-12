@@ -71,15 +71,15 @@ Persistance:
 
 ### Version 1 benchmarks (Mac Book Air)
 
-BenchmarkWorldStep2pages	      20	  77425383 ns/op
-BenchmarkWorldStep1pages	      50	  37956369 ns/op
-BenchmarkWorldReadPage2	     500	   5231006 ns/op
-BenchmarkWorldRWPage	     500	   7288380 ns/op
-BenchmarkWorldRWPageRaw8x8	   10000	    130273 ns/op
-BenchmarkWorldRWPageRaw3x1	   50000	     60944 ns/op
-BenchmarkWorldRPageRaw	  200000	     12766 ns/op
-BenchmarkWorldRPageRaw_ConvUint64	   50000	     50514 ns/op
-BenchmarkWorldRWPageRaw	  100000	     25576 ns/op
+BenchmarkWorldStep2pages          20      77425383 ns/op
+BenchmarkWorldStep1pages          50      37956369 ns/op
+BenchmarkWorldReadPage2          500       5231006 ns/op
+BenchmarkWorldRWPage         500       7288380 ns/op
+BenchmarkWorldRWPageRaw8x8     10000        130273 ns/op
+BenchmarkWorldRWPageRaw3x1     50000         60944 ns/op
+BenchmarkWorldRPageRaw    200000         12766 ns/op
+BenchmarkWorldRPageRaw_ConvUint64      50000         50514 ns/op
+BenchmarkWorldRWPageRaw       100000         25576 ns/op
 
 So, raw full scan of 16kb with 8x8 read and 1 write per op lasts 130000ns/page.
 Raw read 1 byte per op 12766ns/page.
@@ -89,14 +89,45 @@ it's def raw read speed 1 page read = 13k ns/page+lookup.
 
 ### Version 1 bench + norealloc on page query
 
-BenchmarkWorldStep2pages	      50	  30619028 ns/op
-BenchmarkWorldStep1pages	     100	  14154527 ns/op
-BenchmarkWorldReadPage2	    1000	   2108376 ns/op
-BenchmarkWorldRWPage	     500	   4579450 ns/op
-BenchmarkWorldRWPageRaw8x8	   10000	    137833 ns/op
-BenchmarkWorldRWPageRaw3x1	   50000	     61063 ns/op
-BenchmarkWorldRPageRaw	  200000	     12787 ns/op
-BenchmarkWorldRPageRaw_ConvUint64	   50000	     50690 ns/op
-BenchmarkWorldRWPageRaw	  100000	     25515 ns/op
+BenchmarkWorldStep2pages          50      30619028 ns/op
+BenchmarkWorldStep1pages         100      14154527 ns/op
+BenchmarkWorldReadPage2         1000       2108376 ns/op
+BenchmarkWorldRWPage         500       4579450 ns/op
+BenchmarkWorldRWPageRaw8x8     10000        137833 ns/op
+BenchmarkWorldRWPageRaw3x1     50000         61063 ns/op
+BenchmarkWorldRPageRaw    200000         12787 ns/op
+BenchmarkWorldRPageRaw_ConvUint64      50000         50690 ns/op
+BenchmarkWorldRWPageRaw       100000         25515 ns/op
 
 Min read speed 12k ns/page -> 1 ms = 10^6 ns / 12k ns ~ 76 scans of empty pages per 1 ms -> 76k/sec max
+See cpu profile for this at pprof.
+
+#### TODO
+
+Engine:
+
+- Const page size and bits count and mask
+- Const world size
+- Store pages in a tree in page coords
+- Eliminate all math.Max/Min checks
+- Than fix contains Point method =
+- Eliminate any alloc during step
+- Eliminate z layers in a View api (use new pages for processing)
+- Efficient raw page stepping:
+-- Hold rect of life on page (to process only small amount of bytes)
+-- Accumulate changes count per page processing, if it is zero, skip it.
+-- Use raw array read / write, no div / mul, process inner rect of page first
+-- Write separate processing for page edges
+-- Count life on edges
+-- If edges have life, check only ness adjacent pages
+-- Do not process DEAD cells, process only LIFE inside active RECT inside PAGE
+
+API:
+
+- View: Reader, Writer
+- World is a View
+- RLE, LIF
+- MvXY by any value, use MASK and SHIFT to calc page
+- PrintPattern to any pos
+- MirrorXY any rect
+- GetPoints + InRect
