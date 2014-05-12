@@ -114,13 +114,14 @@ Engine:
 - Eliminate any alloc during step
 - Eliminate z layers in a View api (use new pages for processing)
 - Efficient raw page stepping:
--- Hold rect of life on page (to process only small amount of bytes)
--- Accumulate changes count per page processing, if it is zero, skip it.
--- Use raw array read / write, no div / mul, process inner rect of page first
--- Write separate processing for page edges
--- Count life on edges
--- If edges have life, check only ness adjacent pages
--- Do not process DEAD cells, process only LIFE inside active RECT inside PAGE
+    - Hold rect of life on page (to process only small amount of bytes)
+    - Accumulate changes count per page processing, if it is zero, skip it.
+    - Use raw array read / write, no div / mul, process inner rect of page first
+    - Write separate processing for page edges
+    - Count life on edges
+    - If edges have life, check only ness adjacent pages
+    - Use only fixed count of query pages from tree per step to check adj pages (cache them)
+    - Do not process DEAD cells, process only LIFE inside active RECT inside PAGE
 
 API:
 
