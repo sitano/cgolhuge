@@ -468,6 +468,8 @@ func BenchmarkStaticReadRange(b *testing.B) {
 	}
 }
 
+// cmd/gc: Global Array Access Time significantly slower than slice
+// https://code.google.com/p/go/issues/detail?id=5108
 func BenchmarkStaticReadIndex(b *testing.B) {
 	runtime.GC()
 	arr := make([]byte, 128 * 128)
