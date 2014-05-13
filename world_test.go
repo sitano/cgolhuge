@@ -2,10 +2,9 @@ package main
 
 import "testing"
 import "math"
-import (
-	"fmt"
-	"strconv"
-)
+import "fmt"
+import "strconv"
+import "runtime"
 
 func TestNewLifeWorld(t *testing.T) {
 	NewLifeWorldXY(NewAABBMax())
@@ -440,6 +439,44 @@ func BenchmarkWorldRWPageRaw(b *testing.B) {
 		for k := uint(0) ; k < ks; k ++ {
 			st := pp[k]
 			pp[k] = st + 1
+		}
+	}
+}
+
+func BenchmarkStaticAssign(b *testing.B) {
+	runtime.GC()
+	arr := make([]byte, 128 * 128)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for i := range arr {
+			arr[i] = 1
+		}
+	}
+}
+
+var a int
+func BenchmarkStaticReadRange(b *testing.B) {
+	runtime.GC()
+	arr := make([]byte, 128 * 128)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for i := range arr {
+			if arr[i] < 0 {
+				a ++
+			}
+		}
+	}
+}
+
+func BenchmarkStaticReadIndex(b *testing.B) {
+	runtime.GC()
+	arr := make([]byte, 128 * 128)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for j := 0; j < 128 * 128; j ++ {
+			if arr[j] > 0 {
+				a ++
+			}
 		}
 	}
 }

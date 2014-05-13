@@ -1,0 +1,77 @@
+ROUTINE ====================== github.com/sitano/cgolhuge.BenchmarkStaticReadIndex
+   179    179 samples (flat, cumulative) 34.5% of total
+-------------------- ...cts/gocode/src/github.com/sitano/cgolhuge/world_test.go
+     .      .   471: func BenchmarkStaticReadIndex(b *testing.B) {
+     .      .      44c9c0: MOVQ FS:fffffff0,CX
+     .      .      44c9c9: MOVQ 0(CX),SI
+     .      .      44c9cc: CMPQ SI,$fffffffffffffade
+     .      .      44c9d3: JEQ  github.com/sitano/cgolhuge.BenchmarkStaticReadIndex+0x28(SB)
+     .      .      44c9d5: LEAQ 100(SP),AX
+     .      .      44c9dd: SUBQ SI,AX
+     .      .      44c9e0: CMPQ $40a8,AX
+     .      .      44c9e6: JHI  github.com/sitano/cgolhuge.BenchmarkStaticReadIndex+0x39(SB)
+     .      .      44c9e8: MOVQ $800004028,AX
+     .      .      44c9f2: CALL runtime.morestack11(SB)
+     .      .      44c9f7: JMP  github.com/sitano/cgolhuge.BenchmarkStaticReadIndex(SB)
+     .      .      44c9f9: SUBQ $4028,SP
+     .      .   472: runtime.GC()
+     .      .      44ca00: CALL runtime.GC(SB)
+     .      .   473: arr := make([]byte, 128 * 128)
+     .      .      44ca05: LEAQ 8(SP),DI
+     .      .      44ca0a: XORQ AX,AX
+     .      .      44ca0d: MOVQ $800,CX
+     .      .      44ca14: REP STOSQ    AX,(DI)
+     .      .      44ca17: LEAQ 8(SP),BX
+     .      .      44ca1c: MOVQ BX,4008(SP)
+     .      .      44ca24: MOVQ $4000,4018(SP)
+     .      .      44ca30: MOVQ 4008(SP),BX
+     .      .      44ca38: MOVQ BX,4010(SP)
+     .      .      44ca40: CMPQ 4010(SP),$0
+     .      .      44ca49: JEQ  github.com/sitano/cgolhuge.BenchmarkStaticReadIndex+0x112(SB)
+     .      .   474: b.ResetTimer()
+     .      .      44ca4f: MOVQ 4030(SP),BX
+     .      .      44ca57: MOVQ BX,0(SP)
+     .      .      44ca5b: CALL testing.(*B).ResetTimer(SB)
+     .      .      44ca60: MOVQ 4030(SP),SI
+     .      .      44ca68: MOVQ 4018(SP),DX
+     .      .   475: for i := 0; i < b.N; i++ {
+     .      .      44ca70: XORQ CX,CX
+     .      .      44ca73: MOVQ 70(SI),BX
+     .      .      44ca77: CMPQ CX,BX
+     .      .      44ca7a: JLE  github.com/sitano/cgolhuge.BenchmarkStaticReadIndex+0x103(SB)
+     .      .   476: for j := 0; j < 128 * 128; j ++ {
+     .      .      44ca7c: XORQ AX,AX
+     .      .      44ca7f: CMPQ $4000,AX
+     .      .      44ca85: JGE  github.com/sitano/cgolhuge.BenchmarkStaticReadIndex+0xf7(SB)
+   178    178   477: if arr[j] > 0 {
+    85     85      44ca87: MOVQ 4010(SP),BX
+     .      .      44ca8f: MOVQ AX,BP
+     .      .      44ca92: CMPQ DX,AX
+     .      .      44ca95: JCC  github.com/sitano/cgolhuge.BenchmarkStaticReadIndex+0x10b(SB)
+     .      .      44ca97: LEAQ 0(BX)(BP*1),BX
+    92     92      44ca9b: MOVBZX       0(BX),BX
+     1      1      44ca9f: CMPB BL,$0
+     .      .      44caa2: JLS  github.com/sitano/cgolhuge.BenchmarkStaticReadIndex+0xec(SB)
+     .      .   478: a ++
+     .      .      44caa4: INCQ github.com/sitano/cgolhuge.a(SB)
+     1      1   476: for j := 0; j < 128 * 128; j ++ {
+     1      1      44caac: INCQ AX
+     .      .      44caaf: CMPQ $4000,AX
+     .      .      44cab5: JLT  github.com/sitano/cgolhuge.BenchmarkStaticReadIndex+0xc7(SB)
+     .      .   475: for i := 0; i < b.N; i++ {
+     .      .      44cab7: INCQ CX
+     .      .      44caba: MOVQ 70(SI),BX
+     .      .      44cabe: CMPQ CX,BX
+     .      .      44cac1: JGT  github.com/sitano/cgolhuge.BenchmarkStaticReadIndex+0xbc(SB)
+     .      .   482: }
+     .      .      44cac3: ADDQ $4028,SP
+     .      .      44caca:    RET
+     .      .   477: if arr[j] > 0 {
+     .      .      44cacb: CALL runtime.panicindex(SB)
+     .      .      44cad0:    UD2
+     .      .   473: arr := make([]byte, 128 * 128)
+     .      .      44cad2: MOVL AX,0
+     .      .   474: b.ResetTimer()
+     .      .      44cad9: JMP  github.com/sitano/cgolhuge.BenchmarkStaticReadIndex+0x8f(SB)
+     .      .      44cade: ADDB AL,0(AX)
+
