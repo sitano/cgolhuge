@@ -7,13 +7,24 @@ import (
 
 var a int
 
-func BenchmarkStatic16kbAssign(b *testing.B) {
+func BenchmarkStatic16kbAssignByte(b *testing.B) {
 	runtime.GC()
 	arr := make([]byte, 128 * 128)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for j := range arr {
-			arr[j] = 1
+			arr[j] = 0
+		}
+	}
+}
+
+func BenchmarkStatic16kbAssignUint64(b *testing.B) {
+	runtime.GC()
+	arr := make([]uint64, 256)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for j := range arr {
+			arr[j] = 0
 		}
 	}
 }
