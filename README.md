@@ -106,6 +106,11 @@ See cpu profile for this at pprof.
 
 Engine:
 
+- VM to hold page tiles themselves
+- Is it faster to alloc new 4-16kb page or to memset0 reclaimed one?
+- Is it faster to read and sum [4kb]int or [16kb]byte?
+- Reuse go compiler opt flags (http://dave.cheney.net/2012/10/07/notes-on-exploring-the-compiler-flags-in-the-go-compiler-suite)
+
 - Const page size and bits count and mask
 - Const world size
 - Store pages in a tree in page coords
