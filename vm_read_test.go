@@ -20,7 +20,7 @@ func BenchmarkStatic16kbAssignByte(b *testing.B) {
 
 func BenchmarkStatic16kbAssignUint64(b *testing.B) {
 	runtime.GC()
-	arr := make([]uint64, 256)
+	arr := make([]uint64, 2048)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for j := range arr {
@@ -73,10 +73,10 @@ func BenchmarkStatic16kbReadIndexByte(b *testing.B) {
 
 func BenchmarkStatic16kbReadIndexUint32(b *testing.B) {
 	runtime.GC()
-	arr := make([]uint32, 512)
+	arr := make([]uint32, 4096)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for j := 0; j < 512; j ++ {
+		for j := 0; j < 4096; j ++ {
 			b := arr[j]
 			if b > 0 {
 				a ++
@@ -87,10 +87,10 @@ func BenchmarkStatic16kbReadIndexUint32(b *testing.B) {
 
 func BenchmarkStatic16kbReadIndexUint64(b *testing.B) {
 	runtime.GC()
-	arr := make([]uint64, 256)
+	arr := make([]uint64, 2048)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for j := 0; j < 256; j ++ {
+		for j := 0; j < 2048; j ++ {
 			b := arr[j]
 			if b > 0 {
 				a ++
@@ -117,7 +117,7 @@ func BenchmarkStatic16kbReadIndexByte8x8(b *testing.B) {
 
 func BenchmarkStatic16kbReadIndexUInt643x1(b *testing.B) {
 	runtime.GC()
-	arr := make([]uint64, 16 * 16)
+	arr := make([]uint64, 2048)
 	b.ResetTimer()
 	for i := 0 ; i < b.N; i ++ {
 		for j := 16; j < 16 * 16 - 16 - 1; j ++ {
