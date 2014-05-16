@@ -130,6 +130,25 @@ func BenchmarkStatic16kbReadIndexUInt643x1(b *testing.B) {
 	}
 }
 
+func BenchmarkStatic16kbReadIndexUInt643x1_fcall(b *testing.B) {
+	runtime.GC()
+	arr := make([]uint64, 2048)
+	b.ResetTimer()
+	for i := 0 ; i < b.N; i ++ {
+		for j := 16; j < 16 * 16 - 16 - 1; j ++ {
+			b := arr[j - 16] + arr[j] + arr[j + 16]
+			b1:= b & 0xff + (b >> 8) & 0xff + (b >> 16) & 0xff
+			fcallA(b1)
+		}
+	}
+}
+
+func fcallA(t uint64) {
+	if t > 0 {
+		a ++
+	}
+}
+
 func BenchmarkStatic16kbAlloc(b *testing.B) {
 	runtime.GC()
 	b.ResetTimer()
