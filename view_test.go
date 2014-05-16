@@ -1,5 +1,6 @@
 package main
 
+/*
 import "math"
 import "testing"
 
@@ -210,3 +211,4 @@ func TestLifeSumAt(t *testing.T) {
 		}
 	}
 }
+*/

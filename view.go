@@ -1,30 +1,25 @@
 package main
 
-const (
-	DEAD = byte(0)
-	LIFE = byte(1)
-	ZSTEP = 2
-	ZMASK = 0x3
-	ZMAX  = 3
-)
+import "io"
 
 type View interface {
-	// io.Writer
-	// io.Reader
+	Set(x int, y int, v byte)
+	Get(x int, y int) byte
 
-	Set(x int64, y int64, z byte, t byte)
-	Get(x int64, y int64, z byte) byte
+	Print(x int, y int, w int, h int) string
 
-	NextTo(x int64, y int64, z byte, dx int64, dy int64) byte
-	LifeSumAt(x int64, y int64, z byte) byte
+	MirrorX(x int, y int, w int, h int)
+	MirrorY(x int, y int, w int, h int)
+
+	Writer(x int, y int, w int, h int) io.Writer
+	Readr(x int, y int, w int, h int) io.Reader
 }
 
 type WorldView struct {
 	vm *VM
-	pb *PageTree
-	autoReclaim bool
+	// pb *PageTree
 }
-
+/*
 func NewWorldView(vm *VM, pb *PageTree) WorldView {
 	if vm.wsize != pb.wsize {
 		panic("VM wsize must match PageTree wsize")
@@ -174,3 +169,4 @@ func (vw *WorldView) LifeSumAt(x int64, y int64, z byte) byte {
 		vw.NextTo(x, y, z, -1, 0) + 0 +                           vw.NextTo(x, y, z, +1, 0) +
 		vw.NextTo(x, y, z, -1, -1) + vw.NextTo(x, y, z, 0, -1) + vw.NextTo(x, y, z, +1, -1)
 }
+*/

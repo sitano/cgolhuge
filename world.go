@@ -1,12 +1,16 @@
 package main
-
+/*
 import "math"
 import "container/list"
 
 const (
+	DEAD = byte(0)
+	LIFE = byte(1)
+
 	RULE_LIVE_MIN = 2
 	RULE_LIVE_MAX = 3
 	RULE_BORN = 3
+
 )
 
 type World interface {
@@ -190,3 +194,4 @@ func (lw *LifeWorld) NextTo(x int64, y int64, z byte, dx int64, dy int64) byte {
 func (lw *LifeWorld) LifeSumAt(x int64, y int64, z byte) byte {
 	return lw.v.LifeSumAt(x, y, z)
 }
+*/

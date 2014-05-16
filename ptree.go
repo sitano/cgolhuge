@@ -1,5 +1,5 @@
 package main
-
+/*
 import "math"
 import (
 	"fmt"
@@ -198,3 +198,4 @@ func (pt *PageTile) GetAlive() uint {
 func (pt *PageTile) SetAlive(alive uint) {
 	pt.alive = alive
 }
+*/

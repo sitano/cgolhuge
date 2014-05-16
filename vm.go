@@ -2,46 +2,60 @@ package main
 
 import (
 	"container/list"
-	"fmt"
 )
 
 const (
-	// Page of size 2**7 * 2**7 = 128 * 128 = 16kb
-	KSIZE_16K = 128 * 128
+	PageSizeWidth = 64
+	PageSizeHeight = 64
+	PageSizeByte = PageSizeWidth * PageSizeHeight // 4096
+	PageStrideByte = 8
+	PageStrideWidth = PageSizeWidth / PageStrideByte // 8
+	PageStrideHeight = PageSizeHeight / PageStrideByte // 8
+	PageStrideSize = PageSizeWidth * PageStrideHeight // 64
 )
 
-type Page []byte
+// Page coordinates
+// 0 1 2 3 4 | y=0
+// 1 b b b b | y=1
+// 2 b b b b | y=2
+// 3 b b b b | y=2
+// 4 b b b b | y=3
+
+type Page struct {
+	View
+
+	raw []uint64
+
+	px, py uint64
+
+	// TODO: adjacent pages
+	// TODO: rect of life presence
+	// TODO: changes since last step
+	// TODO: life total count in page
+	// TODO: count life on edges sep
+}
 
 type VM struct {
-	// Page size in bytes
-	ksize uint
-	// Width == Height of the page
-	wsize uint
-	wsbits uint
-
 	reserved *list.List
 }
 
-// lg(ksize) must be div by 2
-func NewVM(ksize uint) VM {
-	if (!isPowerOf2(ksize) || lg2(ksize) & 1 != 0) {
-		panic(fmt.Sprintf("Page size must fit equal w/h sizes, sz=%d, lg2=%d", ksize, lg2(ksize)))
-	}
-	ws := pow2ui64(lg2(ksize) >> 1)
-	return VM{
-		ksize: ksize,
-		wsize: ws,
-		wsbits: bits(ws),
+
+func NewVM() *VM {
+	return &VM{
 		reserved: list.New(),
 	}
 }
 
-func (vm VM) NewPage() Page {
-	return make([]byte, vm.ksize, vm.ksize)
+func NewPage() *Page {
+	return &Page{
+		raw: make([]uint64, PageStrideSize, PageStrideSize),
+		px: 0,
+		py: 0,
+	}
 }
 
-func searchPage(l *list.List, p *Page) *list.Element {
-	for e := l.Front(); e != nil; e = e.Next() {
+func (vm *VM) Search(p *Page) *list.Element {
+	for e := vm.reserved.Front(); e != nil; e = e.Next() {
 		if e.Value.(*Page) == p {
 			return e
 		}
@@ -49,24 +63,25 @@ func searchPage(l *list.List, p *Page) *list.Element {
 	return nil
 }
 
-func pow2ui64(n uint) uint {
-	if n > 0 {
-		return 2 << (n - 1)
+func (vm *VM) SearchPXY(px uint64, py uint64) *list.Element {
+	for e := vm.reserved.Front(); e != nil; e = e.Next() {
+		p := e.Value.(*Page)
+		if p.px == px && p.py == py {
+			return e
+		}
 	}
-
-	return 1
+	return nil
 }
 
 // Take any free page or create one and put it into reserved list
-func (vm VM) ReservePage() *Page {
-	p := vm.NewPage()
-	pp:= &p
-	vm.reserved.PushBack(pp)
-	return pp
+func (vm *VM) ReservePage() *Page {
+	p := NewPage()
+	vm.reserved.PushBack(p)
+	return p
 }
 
-func (vm VM) ReclaimPage(p *Page) bool {
-	el := searchPage(vm.reserved, p)
+func (vm *VM) ReclaimPage(p *Page) bool {
+	el := vm.Search(p)
 	if el == nil {
 		return false
 	}
@@ -74,40 +89,6 @@ func (vm VM) ReclaimPage(p *Page) bool {
 	return true
 }
 
-func (vm VM) Pages() int {
+func (vm *VM) Pages() int {
 	return vm.reserved.Len()
-}
-
-func (vm VM) Reserved() int {
-	return vm.reserved.Len()
-}
-
-func (vm VM) PageSize() uint {
-	return pow2ui64(vm.ksize)
-}
-
-func bits(v uint) uint {
-	k := uint(0)
-	t := int64(v)
-	for t != 0 {
-		t &= t - 1
-		k ++
-	}
-	return k
-}
-
-func isPowerOf2(v uint) bool {
-	return v != 0 && v & (v - 1) == 0
-}
-
-func lg2(v uint) uint {
-	k := uint(0)
-	for ; v > 0 ; v >>= 1 {
-		k++
-	}
-	return k - 1
-}
-
-func (vm VM) PageWidth() uint {
-	return vm.wsize
 }

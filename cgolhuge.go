@@ -1,23 +1,21 @@
 package main
 
 import (
-	"fmt"
 	"flag"
 	"os"
 	"log"
 	"runtime/pprof"
 	"runtime"
-	"time"
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 var memprofile = flag.String("memprofile", "", "write memory profile to this file")
 var profiling  = false
-var start time.Time
 
 func main() {
 	flag.Parse()
 
+	/*
 	w := NewLifeWorldXY(NewAABBMax())
 	PrintGliderSE(&w, 3, 3)
 	PrintGliderSW(&w, 10, 10)
@@ -28,6 +26,7 @@ func main() {
 	viewNE := NewAABB(0,  20, 0, 20)
 	viewSW := NewAABB(0, -20,-20, 0)
 	viewSE := NewAABB(0,  20,-20, 0)
+	*/
 
 	runtime.GC()
 
@@ -45,6 +44,7 @@ func main() {
 		profiling = true
 	}
 
+	/*
 	if ! profiling {
 		fmt.Print("\033[2J")
 		PrintWorld(&w, viewNW, 2, 2)
@@ -74,7 +74,7 @@ func main() {
 				stepEnd - stepStart)
 		}
 	}
-
+                */
 	if *memprofile != "" {
 		f, err := os.Create(*memprofile)
 		if err != nil {
@@ -85,7 +85,7 @@ func main() {
 		return
 	}
 }
-
+/*
 func PrintGliderSE(w *LifeWorld, x int64, y int64) {
 	w.Set(x, y, w.Layer(), LIFE)
 	w.Set(x + 1, y, w.Layer(), LIFE)
@@ -131,4 +131,4 @@ func PrintWorld(w *LifeWorld, bbox AABB, row int, col int) {
 		}
 		row ++
 	}
-}
+}                 */

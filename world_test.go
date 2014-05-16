@@ -1,5 +1,5 @@
 package main
-
+/*
 import "testing"
 import "math"
 import "fmt"
@@ -313,3 +313,4 @@ func BenchmarkWorldRWPage(b *testing.B) {
 			}, lw.population).(uint64)
 	}
 }
+*/
