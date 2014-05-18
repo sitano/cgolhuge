@@ -2,10 +2,8 @@
 Based on work of Volker Poplawski, 2013 (https://github.com/volkerp/goquadtree)
 */
 package main
-
+/*
 import "container/list"
-import "math"
-import "fmt"
 
 // Number of entries until a quad is split
 const MAX_ENTRIES_PER_TILE = 16
@@ -20,85 +18,6 @@ const (
 	_BOTTOMLEFT  = 2
 	_BOTTOMRIGHT = 3
 )
-
-// Use AABB() to construct a AABB object
-// Min - inclusive, Max - exlusive
-type AABB struct {
-	MinX, MaxX, MinY, MaxY int64
-}
-
-func (b AABB) String() string {
-	return fmt.Sprintf("[AABB x=%d, y=%d / %d, %d]", b.MinX, b.MinY, b.MaxX, b.MaxY)
-}
-
-func Min(x int64, y int64) int64 {
-	if x <= y {
-		return x
-	}
-
-	return y
-}
-
-func Max(x int64, y int64) int64 {
-	if x >= y {
-		return x
-	}
-
-	return y
-}
-
-func Abs(x int64) uint64 {
-	if x >= 0 {
-		return uint64(x)
-	}
-	return uint64(-1 * x)
-}
-
-func NewAABB(xa, xb, ya, yb int64) AABB {
-	return AABB{ Min(xa, xb), Max(xa, xb), Min(ya, yb), Max(ya, yb) }
-}
-
-func NewAABBMax() AABB {
-	return NewAABB(math.MinInt64, math.MaxInt64, math.MaxInt64, math.MinInt64)
-}
-
-// Make AABB implement the QuadElement interface
-func (b AABB) GetAABB() AABB {
-	return b
-}
-
-func (b *AABB) SizeX() uint64 {
-	// Check overflow
-	if  b.MinX == math.MinInt64 && b.MaxX == math.MaxInt64 {
-		return math.MaxUint64
-	}
-	return Abs(b.MaxX - b.MinX)
-}
-
-func (b *AABB) SizeY() uint64 {
-	// Check overflow
-	if  b.MinY == math.MinInt64 && b.MaxY == math.MaxInt64 {
-		return math.MaxUint64
-	}
-	return Abs(b.MaxY - b.MinY)
-}
-
-// Returns true if o intersects this
-func (b *AABB) Intersects(o AABB) bool {
-	return b.MinX < o.MaxX && b.MinY < o.MaxY &&
-		b.MaxX > o.MinX && b.MaxY > o.MinY
-}
-
-// Returns true if o is within this
-func (b *AABB) Contains(o AABB) bool {
-	return b.MinX <= o.MinX && b.MinY <= o.MinY &&
-		b.MaxX >= o.MaxX && b.MaxY >= o.MaxY
-}
-
-func (b *AABB) ContainsPoint(x int64, y int64) bool {
-	return b.MinX <= x && b.MinY <= y &&
-		b.MaxX >= x && b.MaxY >= y
-}
 
 // QuadTree expects its values to implement the QuadElement interface.
 type QuadElement interface {
@@ -261,3 +180,4 @@ func (qt *QuadTile) reduce(f func(a interface{}, t QuadElement) interface{}, v i
 	}
 	return v
 }
+*/

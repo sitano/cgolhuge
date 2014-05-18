@@ -3,16 +3,19 @@ package main
 import "io"
 
 type View interface {
-	Set(x int, y int, v byte)
-	Get(x int, y int) byte
+	GetAABB() AABB
+	Get(x uint64, y uint64) byte
+	Set(x uint64, y uint64, v byte)
+}
 
-	Print(x int, y int, w int, h int) string
+type ViewIO interface {
+	Print(x uint64, y uint64, w int, h int) string
 
-	MirrorX(x int, y int, w int, h int)
-	MirrorY(x int, y int, w int, h int)
+	MirrorX(x uint64, y uint64, w int, h int)
+	MirrorY(x uint64, y uint64, w int, h int)
 
-	Writer(x int, y int, w int, h int) io.Writer
-	Readr(x int, y int, w int, h int) io.Reader
+	Writer(x uint64, y uint64, w int, h int) io.Writer
+	Reader(x uint64, y uint64, w int, h int) io.Reader
 }
 
 type WorldView struct {

@@ -8,21 +8,32 @@ const (
 	PageSizeWidth = 64
 	PageSizeHeight = 64
 	PageSizeByte = PageSizeWidth * PageSizeHeight // 4096
-	PageStrideByte = 8
-	PageStrideWidth = PageSizeWidth / PageStrideByte // 8
-	PageStrideHeight = PageSizeHeight / PageStrideByte // 8
-	PageStrideSize = PageSizeWidth * PageStrideHeight // 64
+	PageStrideByte = 64
+	PageStridePO2 = 6
+	PageStrideMod = 63 // 0b111111
+	PageStrideWidth = PageSizeWidth / PageStrideByte // 1
+	PageStrideWidthPO2 = 0
+	PageStrideHeight = PageSizeHeight // 64
+	PageStrideSize = PageStrideWidth * PageStrideHeight // 64
 )
 
 // Page coordinates
-// 0 1 2 3 4 | y=0
-// 1 b b b b | y=1
-// 2 b b b b | y=2
-// 3 b b b b | y=2
-// 4 b b b b | y=3
+//   y
+// x 0 1 2 3 4
+//   1 b b b b
+//   2 b b b b
+//   3 b b b b
+//   4 b b b b
+
+// Life packing 1 bit per life
+// uint64 = 8 byte
+// So, x = 0, byte & 1
+//     x = 1, byte >> 1 ) & 1
+// x = ...6543210
+// v = ...0000000
 
 type Page struct {
-	View
+	AABB
 
 	raw []uint64
 
@@ -91,4 +102,40 @@ func (vm *VM) ReclaimPage(p *Page) bool {
 
 func (vm *VM) Pages() int {
 	return vm.reserved.Len()
+}
+
+func (p *Page) GetAABB() AABB {
+	return p.AABB
+}
+
+func XtoPX(x uint64) uint64 {
+	return x >> PageStridePO2
+}
+
+func YtoPY(y uint64) uint64 {
+	return y
+}
+
+func XYtoPI(x uint64, y uint64) uint64 {
+	return uint64((y << PageStrideWidthPO2) + (x >> PageStridePO2))
+}
+
+func XtoSB(x uint64) uint64 {
+	return x & PageStrideMod
+}
+
+func (p *Page) Get(x uint64, y uint64) byte {
+	return byte((p.raw[XYtoPI(x, y)] >> XtoSB(x)) & 0x1)
+}
+
+func (p *Page) Set(x uint64, y uint64, v byte) {
+	// Mask
+	sb := XtoSB(x)
+	mask := ^(uint64(1) << sb)
+	// Unset
+	pi := XYtoPI(x, y)
+	a := p.raw[pi] & mask
+	// Set
+	mask = uint64(v) << sb
+	p.raw[pi] = a | mask
 }
