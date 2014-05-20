@@ -1,6 +1,7 @@
 package main
 
 import "io"
+import "fmt"
 
 type View interface {
 	GetAABB() AABB
@@ -8,20 +9,184 @@ type View interface {
 	Set(x uint64, y uint64, v byte)
 }
 
-type ViewIO interface {
-	Print(x uint64, y uint64, w int, h int) string
+type ViewUtil interface {
+	Print(b AABB) string
+	Match(b AABB, matcher []byte) bool
 
-	MirrorX(x uint64, y uint64, w int, h int)
-	MirrorY(x uint64, y uint64, w int, h int)
+	MirrorH(b AABB)
+	MirrorV(b AABB)
 
-	Writer(x uint64, y uint64, w int, h int) io.Writer
-	Reader(x uint64, y uint64, w int, h int) io.Reader
+	Writer(b AABB) io.Writer
+	Reader(b AABB) io.Reader
+}
+
+type ViewIO struct {
+	io.Writer
+	io.Reader
+
+	v View
+
+	b AABB
+
+	lx uint64
+	ly uint64
+
+	err error
 }
 
 type WorldView struct {
+	// View
+	// ViewIO
+
 	vm *VM
+
 	// pb *PageTree
 }
+
+func Print(v View, b AABB) string {
+	r := ""
+
+	if ! v.GetAABB().Intersects(b) {
+		return r
+	}
+
+	bbview := v.GetAABB().Intersection(b)
+	for iy := bbview.MinY; iy <= bbview.MaxY; iy ++ {
+		for ix := bbview.MinX; ix <= bbview.MaxX; ix ++ {
+			val := v.Get(ix, iy)
+			if val == 0 {
+				r += "."
+			} else {
+				r += "@"
+			}
+		}
+
+		r += "\n"
+	}
+
+	return r
+}
+
+func Match(v View, b AABB, matcher []byte) bool {
+	if ! v.GetAABB().Intersects(b) {
+		return len(matcher) == 0
+	}
+
+	ii := 0
+	bbview := v.GetAABB().Intersection(b)
+	for iy := bbview.MinY; iy <= bbview.MaxY; iy ++ {
+		for ix := bbview.MinX; ix <= bbview.MaxX; ix ++ {
+			// fmt.Printf("x=%v, y=%v, v1=%v, v2=%v\n", ix, iy, v.Get(ix, iy), matcher[ii])
+			if v.Get(ix, iy) != matcher[ii] {
+				return false
+			}
+			ii ++
+		}
+	}
+
+	return true
+}
+
+func MirrorH(v View, b AABB) {
+	if ! v.GetAABB().Intersects(b) {
+		return
+	}
+
+	bbview := v.GetAABB().Intersection(b)
+	for iy := bbview.MinY; iy <= bbview.MaxY; iy ++ {
+		for ix := bbview.MinX; ix <= bbview.MaxX / 2; ix ++ {
+			ix2 := bbview.MaxX - (ix - bbview.MinX)
+			val := v.Get(ix2, iy)
+			v.Set(ix2, iy, v.Get(ix, iy))
+			v.Set(ix2, iy, val)
+		}
+	}
+}
+
+func MirrorV(v View, b AABB) {
+	if ! v.GetAABB().Intersects(b) {
+		return
+	}
+
+	bbview := v.GetAABB().Intersection(b)
+	for ix := bbview.MinX; ix <= bbview.MaxX; ix ++ {
+		for iy := bbview.MinY; iy <= bbview.MaxY / 2; iy ++ {
+			iy2 := bbview.MaxY - (iy - bbview.MinY)
+			val := v.Get(ix, iy2)
+			v.Set(ix, iy2, v.Get(ix, iy))
+			v.Set(ix, iy2, val)
+		}
+	}
+}
+
+func Writer(v View, b AABB) io.Writer {
+	if ! v.GetAABB().Intersects(b) {
+		panic(fmt.Sprintf("Writer failed: %v does not intersect %v", v.GetAABB(), b))
+	}
+	bbox := v.GetAABB().Intersection(b)
+	return ViewIO{
+		v: v,
+		b: bbox,
+		lx: bbox.MinX,
+		ly: bbox.MinY,
+		err: nil,
+	}
+}
+
+func Reader(v View, b AABB) io.Reader {
+	if ! v.GetAABB().Intersects(b) {
+		panic(fmt.Sprintf("Reader failed: %v does not intersect %v", v.GetAABB(), b))
+	}
+	bbox := v.GetAABB().Intersection(b)
+	return ViewIO{
+		v: v,
+		b: bbox,
+		lx: bbox.MinX,
+		ly: bbox.MinY,
+		err: nil,
+	}
+}
+
+func (v ViewIO) Read(p []byte) (n int, err error) {
+	if len(p) == 0 {
+		return 0, v.err
+	}
+	ii := 0
+	for ; v.ly <= v.b.MaxY; v.ly ++ {
+		for ; v.lx <= v.b.MaxX && ii < len(p); v.lx ++ {
+			p[ii] = v.v.Get(v.lx, v.ly)
+			ii ++
+		}
+		if v.lx > v.b.MaxX {
+			v.lx = v.b.MinX
+		}
+	}
+	if v.err == nil && ! v.b.ContainsPoint(v.lx, v.ly) {
+		v.err = io.EOF
+	}
+	return ii, v.err
+}
+
+func (v ViewIO) Write(p []byte) (n int, err error) {
+	if len(p) == 0 {
+		return 0, v.err
+	}
+	ii := 0
+	for ; v.ly <= v.b.MaxY; v.ly ++ {
+		for ; v.lx <= v.b.MaxX && ii < len(p); v.lx ++ {
+			v.v.Set(v.lx, v.ly, p[ii])
+			ii ++
+		}
+		if v.lx > v.b.MaxX {
+			v.lx = v.b.MinX
+		}
+	}
+	if v.err == nil && ! v.b.ContainsPoint(v.lx, v.ly) {
+		v.err = io.EOF
+	}
+	return ii, v.err
+}
+
 /*
 func NewWorldView(vm *VM, pb *PageTree) WorldView {
 	if vm.wsize != pb.wsize {

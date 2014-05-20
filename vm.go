@@ -2,6 +2,7 @@ package main
 
 import (
 	"container/list"
+	"io"
 )
 
 const (
@@ -34,6 +35,8 @@ const (
 
 type Page struct {
 	AABB
+	View
+	ViewUtil
 
 	raw []uint64
 
@@ -104,10 +107,6 @@ func (vm *VM) Pages() int {
 	return vm.reserved.Len()
 }
 
-func (p *Page) GetAABB() AABB {
-	return p.AABB
-}
-
 func XtoPX(x uint64) uint64 {
 	return x >> PageStridePO2
 }
@@ -122,6 +121,12 @@ func XYtoPI(x uint64, y uint64) uint64 {
 
 func XtoSB(x uint64) uint64 {
 	return x & PageStrideMod
+}
+
+// View implementation
+
+func (p *Page) GetAABB() AABB {
+	return p.AABB
 }
 
 func (p *Page) Get(x uint64, y uint64) byte {
@@ -139,3 +144,30 @@ func (p *Page) Set(x uint64, y uint64, v byte) {
 	mask = uint64(v) << sb
 	p.raw[pi] = a | mask
 }
+
+// ViewUtil implementation
+
+func (p *Page) Print(b AABB) string {
+	return Print(p, b)
+}
+
+func (p *Page) Match(b AABB, matcher []byte) bool {
+	return Match(p, b, matcher)
+}
+
+func (p *Page) MirrorH(b AABB) {
+	MirrorH(p, b)
+}
+
+func (p *Page) MirrorV(b AABB) {
+	MirrorV(p, b)
+}
+
+func (p *Page) Writer(b AABB) io.Writer {
+	return Writer(p, b)
+}
+
+func (p *Page) Reader(b AABB) io.Reader {
+	return Reader(p, b)
+}
+

@@ -12,7 +12,7 @@ type AABB struct {
 }
 
 func (b AABB) String() string {
-	return fmt.Sprintf("p1(%d, %d) -> p2(%d, %d)", b.MinX, b.MinY, b.MaxX, b.MaxY)
+	return fmt.Sprintf("(AABB %d, %d -> %d, %d)", b.MinX, b.MinY, b.MaxX, b.MaxY)
 }
 
 func Min(x uint64, y uint64) uint64 {
@@ -27,6 +27,14 @@ func Max(x uint64, y uint64) uint64 {
 
 func NewAABB(xa, ya, xb, yb uint64) AABB {
 	return AABB{ Min(xa, xb), Min(ya, yb), Max(xa, xb), Max(ya, yb) }
+}
+
+func NewXYWH(x, y, w, h uint64) AABB {
+	return AABB{ x, y, x + w - 1, y + h - 1 }
+}
+
+func New00WH(w, h uint64) AABB {
+	return AABB{ 0, 0, w - 1, h - 1 }
 }
 
 func NewAABBMax() AABB {

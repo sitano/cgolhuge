@@ -1,6 +1,8 @@
 package main
 
 import "testing"
+import "io"
+import "bytes"
 
 func TestBitsShift(t *testing.T) {
 	if 2 >> 1 != 1 { t.Error("2 >> 1 != 1") }
@@ -89,5 +91,47 @@ func TestPageView(t *testing.T) {
 	p.Set(2, 1, 1)
 	if p.Get(2, 1) != 1 || p.raw[1] != 0x6 {
 		t.Error("Get(0-2, 1) error after set 1 to (2, 1)")
+	}
+}
+
+var gliderPattern3x3 []byte = []byte{
+	0, 1, 0,
+	0, 0, 1,
+	1, 1, 1,
+}
+
+var gliderPattern5x5 []byte = []byte{
+	0, 0, 0, 0, 0,
+	0, 0, 1, 0, 0,
+	0, 0, 0, 1, 0,
+	0, 1, 1, 1, 0,
+	0, 0, 0, 0, 0,
+}
+
+func TestPageUtil(t *testing.T) {
+	vm := NewVM()
+	p := vm.ReservePage()
+	p.AABB = New00WH(PageSizeWidth, PageSizeHeight)
+
+	var v View = p
+	var u ViewUtil = p
+
+	if v == nil || u == nil {
+		t.Error("Page(v, u) interface error")
+	}
+
+	n, err := u.Writer(NewXYWH(1, 1, 3, 3)).Write(gliderPattern3x3)
+	if n != len(gliderPattern3x3) || err != io.EOF {
+		t.Errorf("Page(%v, %v) invalid write op len/EOF (%v, %v)", v, p, n, err)
+	}
+
+	if ! u.Match(NewXYWH(0, 0, 5, 5), gliderPattern5x5) {
+		t.Errorf("Page(%v, %v) invalid match for glider 5x5 ", v, p)
+	}
+
+	var m2 []byte = make([]byte, 3*3, 3*3)
+	n, err = u.Reader(NewXYWH(1, 1, 3, 3)).Read(m2)
+	if n != len(gliderPattern3x3) || err != io.EOF || ! bytes.Equal(m2, gliderPattern3x3) {
+		t.Errorf("Page(%v, %v) invalid read op len/EOF (%v, %v)", v, p, n, err)
 	}
 }
