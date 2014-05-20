@@ -1,7 +1,4 @@
 package main
-/*
-import "math"
-import "container/list"
 
 const (
 	DEAD = byte(0)
@@ -10,8 +7,11 @@ const (
 	RULE_LIVE_MIN = 2
 	RULE_LIVE_MAX = 3
 	RULE_BORN = 3
-
 )
+
+/*
+import "math"
+import "container/list"
 
 type World interface {
 	View
