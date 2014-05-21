@@ -10,23 +10,13 @@ import (
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 var memprofile = flag.String("memprofile", "", "write memory profile to this file")
+var loadfile = flag.String("load", "", "Load RLE/LIF file into world")
+var loadx = flag.Uint64("x", uint64(0), "Start x position")
+var loady = flag.Uint64("y", uint64(0), "Start y position")
 var profiling  = false
 
 func main() {
 	flag.Parse()
-
-	/*
-	w := NewLifeWorldXY(NewAABBMax())
-	PrintGliderSE(&w, 3, 3)
-	PrintGliderSW(&w, 10, 10)
-	PrintGliderNW(&w, 3, 10)
-	PrintGliderNE(&w, 10, 3)
-
-	viewNW := NewAABB(0, -20, 0, 20)
-	viewNE := NewAABB(0,  20, 0, 20)
-	viewSW := NewAABB(0, -20,-20, 0)
-	viewSE := NewAABB(0,  20,-20, 0)
-	*/
 
 	runtime.GC()
 
@@ -44,16 +34,20 @@ func main() {
 		profiling = true
 	}
 
-	/*
+	var screen *Screen
 	if ! profiling {
-		fmt.Print("\033[2J")
-		PrintWorld(&w, viewNW, 2, 2)
-		PrintWorld(&w, viewNE, 2, 4 + int(viewNW.SizeX()))
-		PrintWorld(&w, viewSW, 4 + int(viewNW.SizeY()), 2)
-		PrintWorld(&w, viewSE, 4 + int(viewNW.SizeY()), 4 + int(viewNW.SizeX()))
-		start = time.Now()
+		screen = NewScreen()
 	}
-	stepStart := int64(0)
+
+	if *loadfile != "" {
+		// TODO: do something into x, y coord
+	}
+
+	screen.Reset()
+	screen.PrintAt(5, 5, "Hi guys\n1\n2\n3\n4\n5")
+	screen.Println()
+
+/*	stepStart := int64(0)
 	for i := 0 ; i < 1000 ; i ++ {
 		if ! profiling {
 			stepStart = time.Now().UnixNano()
@@ -74,7 +68,8 @@ func main() {
 				stepEnd - stepStart)
 		}
 	}
-                */
+    */
+
 	if *memprofile != "" {
 		f, err := os.Create(*memprofile)
 		if err != nil {
@@ -85,50 +80,3 @@ func main() {
 		return
 	}
 }
-/*
-func PrintGliderSE(w *LifeWorld, x int64, y int64) {
-	w.Set(x, y, w.Layer(), LIFE)
-	w.Set(x + 1, y, w.Layer(), LIFE)
-	w.Set(x + 2, y, w.Layer(), LIFE)
-	w.Set(x + 2, y + 1, w.Layer(), LIFE)
-	w.Set(x + 1, y + 2, w.Layer(), LIFE)
-}
-
-func PrintGliderSW(w *LifeWorld, x int64, y int64) {
-	w.Set(x, y, w.Layer(), LIFE)
-	w.Set(x + 1, y, w.Layer(), LIFE)
-	w.Set(x + 2, y, w.Layer(), LIFE)
-	w.Set(x, y + 1, w.Layer(), LIFE)
-	w.Set(x + 1, y + 2, w.Layer(), LIFE)
-}
-
-func PrintGliderNE(w *LifeWorld, x int64, y int64) {
-	w.Set(x+2, y, w.Layer(), LIFE)
-	w.Set(x+2, y + 1, w.Layer(), LIFE)
-	w.Set(x+2, y + 2, w.Layer(), LIFE)
-	w.Set(x+1, y + 2, w.Layer(), LIFE)
-	w.Set(x, y + 1, w.Layer(), LIFE)
-}
-
-func PrintGliderNW(w *LifeWorld, x int64, y int64) {
-	w.Set(x, y, w.Layer(), LIFE)
-	w.Set(x, y + 1, w.Layer(), LIFE)
-	w.Set(x, y + 2, w.Layer(), LIFE)
-	w.Set(x + 1, y + 2, w.Layer(), LIFE)
-	w.Set(x + 2, y + 1, w.Layer(), LIFE)
-}
-
-func PrintWorld(w *LifeWorld, bbox AABB, row int, col int) {
-	for y := bbox.MaxY ; y >= bbox.MinY && y <= bbox.MaxY ; y -- {
-		fmt.Printf("\033[%d;%dH", row, col)
-		for x := bbox.MinX ; x <= bbox.MaxX && x >= bbox.MinX ; x ++ {
-			state := w.Get(x, y, w.Layer())
-			if state == LIFE {
-				fmt.Print("@")
-			} else {
-				fmt.Print(".")
-			}
-		}
-		row ++
-	}
-}                 */
