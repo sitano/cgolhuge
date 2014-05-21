@@ -135,3 +135,50 @@ func TestPageUtil(t *testing.T) {
 		t.Errorf("Page(%v, %v) invalid read op len/EOF (%v, %v)", v, p, n, err)
 	}
 }
+
+func TestPageSeqRW(t *testing.T) {
+	vm := NewVM()
+	p := vm.ReservePage()
+	p.AABB = New00WH(PageSizeWidth, PageSizeHeight)
+
+	var v View = p
+	var u ViewUtil = p
+
+	if v == nil || u == nil {
+		t.Error("Page(v, u) interface error")
+	}
+
+	wr := u.Writer(NewXYWH(1, 1, 3, 3))
+
+	n, err := wr.Write([]byte{1})
+	if n != 1 || err != nil || p.raw[1] != 2 {
+		t.Errorf("Page(%v, %v) invalid write op len/EOF (%v, %v)", v, p, n, err)
+	}
+
+	n, err = wr.Write([]byte{1})
+	if n != 1 || err != nil || p.raw[1] != 6 {
+		t.Errorf("Page(%v, %v) invalid write op len/EOF (%v, %v)", v, p, n, err)
+	}
+
+	n, err = wr.Write([]byte{0,1,1,1, 1,1,1})
+	if n != 7 || err != io.EOF {
+		t.Errorf("Page(%v, %v) invalid write op len/EOF (%v, %v)", v, p, n, err)
+	}
+
+	rw := u.Reader(NewXYWH(1, 1, 3, 3))
+	rbuf := make([]byte, 1, 1)
+	n, err = rw.Read(rbuf)
+	if n != 1 || err != nil || rbuf[0] != 1 {
+		t.Errorf("Page(%v, %v) invalid write op len/EOF (%v, %v)", v, p, n, err)
+	}
+
+	n, err = rw.Read(rbuf)
+	if n != 1 || err != nil || rbuf[0] != 1 {
+		t.Errorf("Page(%v, %v) invalid write op len/EOF (%v, %v)", v, p, n, err)
+	}
+
+	n, err = rw.Read(rbuf)
+	if n != 1 || err != nil || rbuf[0] != 0 {
+		t.Errorf("Page(%v, %v) invalid write op len/EOF (%v, %v)", v, p, n, err)
+	}
+}

@@ -10,6 +10,7 @@ import (
 )
 
 var rleXYformat, _ = regexp.Compile("x\\W*=\\W*([\\d+])\\W*,\\W*y\\W*=\\W*([\\d+])")
+var rleLFformat, _ = regexp.Compile("[0-9!ob$]+")
 
 func LoadRLE(v View, x uint64, y uint64, filename string) {
 	var wr io.Writer
@@ -55,15 +56,30 @@ func LoadRLE(v View, x uint64, y uint64, filename string) {
 			wr = vu.Writer(bb)
 			continue
 		}
-		if wr != nil {
+		if wr != nil && rleLFformat.MatchString(line) {
 			rep := 1
 			rep_str := ""
+			vx := bb.MinX
+			vy := bb.MinY
+			pc := ' '
 			for _, c := range line {
 				if c == '!' {
 					return
 				}
 				if c >= '0' && c <= '9' {
 					rep_str += string(c)
+				}
+				if c == '$' {
+					if vx > bb.MinX && vx <= bb.MaxX {
+						c = 'b'
+						rep = int(bb.MaxX - vx + 1)
+						rep_str = ""
+					}
+					if vx == bb.MinX && pc == '$' {
+						c = 'b'
+						rep = int(bb.SizeX())
+						rep_str = ""
+					}
 				}
 				if c == 'b' || c == 'o' {
 					rep = 1
@@ -84,8 +100,14 @@ func LoadRLE(v View, x uint64, y uint64, filename string) {
 						if n != 1 {
 							panic(fmt.Sprintf("LoadRLE error for View(%v) at (%d, %d) of %s: failed to write %s", v, x, y, filename, string(c)))
 						}
+						vx ++
+						if vx > bb.MaxX {
+							vx = bb.MinX
+							vy ++
+						}
 					}
 				}
+				pc = c
 			}
 		}
 	}

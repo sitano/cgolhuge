@@ -124,7 +124,7 @@ func Writer(v View, b AABB) io.Writer {
 		panic(fmt.Sprintf("Writer failed: %v does not intersect %v", v.GetAABB(), b))
 	}
 	bbox := v.GetAABB().Intersection(b)
-	return ViewIO{
+	return &ViewIO{
 		v: v,
 		b: bbox,
 		lx: bbox.MinX,
@@ -138,7 +138,7 @@ func Reader(v View, b AABB) io.Reader {
 		panic(fmt.Sprintf("Reader failed: %v does not intersect %v", v.GetAABB(), b))
 	}
 	bbox := v.GetAABB().Intersection(b)
-	return ViewIO{
+	return &ViewIO{
 		v: v,
 		b: bbox,
 		lx: bbox.MinX,
@@ -147,41 +147,49 @@ func Reader(v View, b AABB) io.Reader {
 	}
 }
 
-func (v ViewIO) Read(p []byte) (n int, err error) {
+func (v *ViewIO) Read(p []byte) (n int, err error) {
 	if len(p) == 0 {
 		return 0, v.err
 	}
 	ii := 0
-	for ; v.ly <= v.b.MaxY; v.ly ++ {
+	for v.ly <= v.b.MaxY {
 		for ; v.lx <= v.b.MaxX && ii < len(p); v.lx ++ {
 			p[ii] = v.v.Get(v.lx, v.ly)
 			ii ++
 		}
 		if v.lx > v.b.MaxX {
 			v.lx = v.b.MinX
+			v.ly ++
+		}
+		if ii == len(p) {
+			break
 		}
 	}
-	if v.err == nil && ! v.b.ContainsPoint(v.lx, v.ly) {
+	if v.err == nil && v.ly > v.b.MaxY {
 		v.err = io.EOF
 	}
 	return ii, v.err
 }
 
-func (v ViewIO) Write(p []byte) (n int, err error) {
+func (v *ViewIO) Write(p []byte) (n int, err error) {
 	if len(p) == 0 {
 		return 0, v.err
 	}
 	ii := 0
-	for ; v.ly <= v.b.MaxY; v.ly ++ {
+	for v.ly <= v.b.MaxY {
 		for ; v.lx <= v.b.MaxX && ii < len(p); v.lx ++ {
 			v.v.Set(v.lx, v.ly, p[ii])
 			ii ++
 		}
 		if v.lx > v.b.MaxX {
 			v.lx = v.b.MinX
+			v.ly ++
+		}
+		if ii == len(p) {
+			break
 		}
 	}
-	if v.err == nil && ! v.b.ContainsPoint(v.lx, v.ly) {
+	if v.err == nil && v.ly > v.b.MaxY {
 		v.err = io.EOF
 	}
 	return ii, v.err
