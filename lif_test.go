@@ -1,17 +1,52 @@
 package main
 
-//import "fmt"
+// import "fmt"
 import "testing"
 
-func TestLoadLIF(t *testing.T) {
+var GliderGunPattern36x9 []byte = []byte{
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1,
+1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+/**
+.........................@..........
+......................@@@@....@.....
+.............@.......@@@@.....@.....
+............@.@......@..@.........@@
+...........@...@@....@@@@.........@@
+@@.........@...@@.....@@@@..........
+@@.........@...@@........@..........
+............@.@.....................
+.............@......................
+ */
+}
+
+func TestLoadLIFGlider(t *testing.T) {
 	vm := NewVM()
 	p := vm.ReservePage()
 	p.AABB = New00WH(PageSizeWidth, PageSizeHeight)
 
-	LoadLIF(p, 1, 1, "pattern/glider.lif")
-	//fmt.Print(p.Print(NewXYWH(0, 0, 5, 5)))
+	LoadLIF(p, 2, 2, "pattern/glider.lif")
+	// fmt.Print(p.Print(NewXYWH(0, 0, 5, 5)))
 
 	if ! p.Match(NewXYWH(0, 0, 5, 5), GliderPattern5x5) {
 		t.Errorf("Page(%v) invalid match for glider 5x5 ", p)
+	}
+}
+
+func TestLoadLIFGliderGun(t *testing.T) {
+	vm := NewVM()
+	p := vm.ReservePage()
+	p.AABB = New00WH(PageSizeWidth, PageSizeHeight)
+
+	LoadLIF(p, 19, 6, "pattern/glider_gun.lif")
+	// fmt.Print(p.Print(NewXYWH(0, 0, 50, 12)))
+	if ! p.Match(NewXYWH(2, 1, 36, 9), GliderGunPattern36x9) {
+		t.Errorf("Page(%v) invalid match for glider 36x9 ", p)
 	}
 }
