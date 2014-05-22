@@ -9,9 +9,7 @@ This is demo solution of Conway's game of life problem simulated in a huge world
 ## Features
 
 * Huge world (2^64^2) support
-* World mapped on to closed sphere (edges are neighborhoods)
-* Very sparsed life (empty mostly)
-* Life locality
+* Sparsed life (empty mostly)
 * Start state 100x100
 * Persistent state (load / save)
 * UI client + editor <=> server
@@ -39,35 +37,26 @@ $ make release
 
 ## Running
 
-## API
+```
+go build && ./cgolhuge -load ./pattern/glider_gun.lif -lx 20 -ly 20 -idle 100
+```
 
-State:
-* /world/setup
-* /world/state[/x/y/w/h]
-* /world/step[/{counts}]
-
-Persistance:
-* /world/save
-* /world/load/{what}
-
-## Possible solutions to big world problem
+## Available solutions to big world problem
 
 * virtual memory pages mapping
-* compression
+* global compression
 * (x, y) coord per point
 
-## Possible optimizations
+## Optimizations todo
 
 * hashlife
 * cache on quad tree nodes
 
 ## Implementation (version 1)
 
-* virtual memory pages 2^n (128x128 to match start window size = 16kb page)
-* views: quad tree view (coords? origin)
-* world ticker bitwised, 2 bit per life
-* save / load rle???
-* data compression
+* virtual memory pages 2^n (64x64, 1 bit/life, 1 page = 64 * uint64 = 64 * 8 byte = 512 byte)
+* views: quad tree view
+* load rle / lif
 
 ### Version 1 benchmarks (Mac Book Air)
 
