@@ -62,6 +62,7 @@ func NewVM() *VM {
 
 func NewPage() *Page {
 	return &Page{
+		AABB: New00WH(PageSizeWidth, PageSizeHeight),
 		raw: make([]uint64, PageStrideSize, PageStrideSize),
 		px: 0,
 		py: 0,
