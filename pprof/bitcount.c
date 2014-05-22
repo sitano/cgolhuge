@@ -6,20 +6,20 @@
    ========================================================================== */
 
 /* Ivan:
-// gcc -O4 -mpopcnt -mtune=core2 -march=core2 -fforce-addr -funroll-loops -frerun-cse-after-loop -frerun-loop-opt -malign-functions=4
+// gcc -O4 -mpopcnt -mtune=corei7 -march=corei7 -fforce-addr -funroll-loops -frerun-cse-after-loop -frerun-loop-opt -malign-functions=4
 // CPU0: Intel(R) Core(TM) i7-4770K CPU @ 3.50GHz (fam: 06, model: 3c, stepping: 03)
 All BitCounts seem okay!  Starting speed trials
-     iterated: 1000 million counts in 12540 ms for       79745 cnts/ms
-       sparse: 1000 million counts in  6487 ms for      154154 cnts/ms
-        dense: 1000 million counts in  7264 ms for      137665 cnts/ms
-  precomputed: 1000 million counts in  1699 ms for      588582 cnts/ms
-precomputed16: 1000 million counts in  1439 ms for      694927 cnts/ms
-     parallel: 1000 million counts in  2017 ms for      495786 cnts/ms
-        nifty: 1000 million counts in  2342 ms for      426985 cnts/ms
-     nuonifty: 1000 million counts in  2108 ms for      474383 cnts/ms
-      seander: 1000 million counts in  1700 ms for      588235 cnts/ms
-          mit: 1000 million counts in  2508 ms for      398724 cnts/ms
-       POPCNT: 1000 million counts in  1175 ms for      851064 cnts/ms
+     iterated: 1000 million counts in 12664 ms for       78964 cnts/ms
+       sparse: 1000 million counts in  6506 ms for      153704 cnts/ms
+        dense: 1000 million counts in  7309 ms for      136818 cnts/ms
+  precomputed: 1000 million counts in  1717 ms for      582411 cnts/ms
+precomputed16: 1000 million counts in  1441 ms for      693963 cnts/ms
+     parallel: 1000 million counts in  2058 ms for      485909 cnts/ms
+        nifty: 1000 million counts in  2352 ms for      425170 cnts/ms
+     nuonifty: 1000 million counts in  2132 ms for      469043 cnts/ms
+      seander: 1000 million counts in  1704 ms for      586854 cnts/ms
+          mit: 1000 million counts in  2540 ms for      393701 cnts/ms
+       POPCNT: 1000 million counts in  1206 ms for      829187 cnts/ms
    */
 
 

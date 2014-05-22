@@ -9,3 +9,6 @@ func NumberOfSetBits(n uint64) uint64 {
 	tmp := n - ((n >> 1) & 0x7777777777777777) - ((n >> 2) & 0x3333333333333333) - ((n >> 3) & 0x1111111111111111)
 	return ((tmp + (tmp >> 4) ) & 0x0F0F0F0F0F0F0F0F) % 255
 }
+
+// __builtin_popcount
+func PopCnt(n uint64) uint64
