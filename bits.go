@@ -11,4 +11,5 @@ func NumberOfSetBits(n uint64) uint64 {
 }
 
 // __builtin_popcount
+//go:noescape
 func PopCnt(n uint64) uint64
