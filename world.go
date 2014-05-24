@@ -96,9 +96,10 @@ func (w *LifeWorld) Step() {
 				// TODO: first bit 0x2
 
 				for bi := uint(1); bi < PageStrideBits - 2; bi ++ {
-					sum := PopCnt(prev_line & (BITS111 << (bi - 1))) +
-						PopCnt(curr_line & (BITS101 << (bi - 1))) +
-						PopCnt(next_line & (BITS111 << (bi - 1)))
+					bi_1 := bi - 1
+					sum := PopCnt((prev_line & (BITS111 << bi_1)) >> bi_1 +
+							((curr_line & (BITS101 << bi_1)) >> bi_1) << 3 +
+							((next_line & (BITS111 << bi_1)) >> bi_1) << 6)
 
 					if sum < RULE_LIVE_MIN {
 						continue
