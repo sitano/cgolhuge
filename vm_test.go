@@ -59,20 +59,20 @@ func TestPageMustBeClean(t *testing.T) {
 }
 
 func TestPageView(t *testing.T) {
-	if XtoPX(0) != 0 || XtoPX(1) != 0 || XtoPX(PageStrideByte) != 1 {
+	if XtoPX(0) != 0 || XtoPX(1) != 0 || XtoPX(PageStrideBits) != 1 {
 		t.Error("XtoPX error")
 	}
 
-	if YtoPY(PageStrideByte) != PageStrideByte {
+	if YtoPY(PageStrideBits) != PageStrideBits {
 		t.Error("YtoPY error")
 	}
 
-	if XYtoPI(0, 0) != 0 || XYtoPI(1, 0) != 0 || XYtoPI(PageStrideByte - 1, 0) != 0 ||
+	if XYtoPI(0, 0) != 0 || XYtoPI(1, 0) != 0 || XYtoPI(PageStrideBits - 1, 0) != 0 ||
 		XYtoPI(0, 1) != PageStrideWidth || XYtoPI(1, 1) != PageStrideWidth {
 		t.Error("XYtoPI error")
 	}
 
-	if XtoSB(0) != 0 || XtoSB(5) != 5 || XtoSB(PageStrideByte) != 0 {
+	if XtoSB(0) != 0 || XtoSB(5) != 5 || XtoSB(PageStrideBits) != 0 {
 		t.Error("XtoSB error")
 	}
 

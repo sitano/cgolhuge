@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"bufio"
 	"os"
 	"log"
 	"runtime/pprof"
@@ -19,16 +20,18 @@ var loady = flag.Uint64("ly", uint64(0), "Load into y position")
 var viewx = flag.Uint64("vx", uint64(0), "View port top-left x position")
 var viewy = flag.Uint64("vy", uint64(0), "View port top-left y position")
 var idle = flag.Int64("idle", int64(0), "Idle ms between steps")
+var wait = flag.Bool("wait", false, "Wait <ENTER> for every step")
 var start time.Time
 var profiling bool
 
 func main() {
 	flag.Parse()
 
-	w := NewWorldView(NewVM())
+	w := NewLifeWorld(NewWorldView(NewVM()))
 	vx:= *viewx
 	vy:= *viewy
-	vp:= w.pb.GetAABB()
+	vp:= w.v.pb.GetAABB()
+	reader := bufio.NewReader(os.Stdin)
 
 	runtime.GC()
 
@@ -64,20 +67,24 @@ func main() {
 	}
 
 	stepStart := int64(0)
+	stepEnd := int64(0)
 	for {
 		if ! profiling {
-			stepStart = time.Now().UnixNano()
-		}
-		// TODO: w.Step()
-		if ! profiling {
-			stepEnd := time.Now().UnixNano()
 			screen.Reset()
 			screen.PrintAt(1, 1, fmt.Sprintf("Gen: %d, Pop: %d, VMPages: %d, Elapsed: %.1fs, Avg/Step: %d ns, VP: %v",
-				0, 0, w.vm.Pages(), time.Now().Sub(start).Seconds(), stepEnd - stepStart, vp))
+					w.Generation(), w.Population(), w.v.vm.Pages(), time.Now().Sub(start).Seconds(), stepEnd - stepStart, vp))
 			screen.PrintAt(2, 1, w.Print(vp))
 			if *idle > 0 {
 				time.Sleep(time.Millisecond * time.Duration(*idle))
 			}
+			if *wait {
+				reader.ReadString('\n')
+			}
+			stepStart = time.Now().UnixNano()
+		}
+		w.Step()
+		if ! profiling {
+			stepEnd = time.Now().UnixNano()
 		}
 	}
 

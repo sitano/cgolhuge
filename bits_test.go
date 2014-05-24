@@ -21,6 +21,9 @@ func TestPopCnt(t *testing.T) {
 	if PopCnt(0) != 0 {
 		t.Errorf("Bits(%d) != %d\n", 0, 0)
 	}
+	if PopCnt(2) != 1 {
+		t.Errorf("Bits(%d) != %d\n", 2, 1)
+	}
 	if PopCnt(3) != 2 {
 		t.Errorf("Bits(%d) != %d\n", 3, 2)
 	}

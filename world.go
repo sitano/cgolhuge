@@ -11,6 +11,11 @@ const (
 	RULE_LIVE_MIN = 2
 	RULE_LIVE_MAX = 3
 	RULE_BORN = 3
+
+	BITS1   = uint64(0x1) //   0b1
+	BITS11  = uint64(0x3) //  0b11
+	BITS111 = uint64(0x7) // 0b111
+	BITS101 = uint64(0x5) // 0b101
 )
 
 type World interface {
@@ -68,43 +73,75 @@ func (w *LifeWorld) Step() {
 	w.generation ++
 	w.population = 0
 
-	for p := range w.v.vm.reserved {
-		panic(p)
+	if w.v.vm.Pages() == 0 {
+		return
 	}
 
-	/*w.population = w.v.pb.Reduce(func(a interface{}, pt *PageTile) interface{} {
-			pt.alive = 0
+	p := w.v.vm.reserved[0]
+	p_len := len(p.raw)
+	prev_line := uint64(0)
+	curr_line := p.raw[0]
+	next_line := uint64(0)
+	for _, p = range w.v.vm.reserved {
+		p.next = NewPageBuf()
+		raw := p.raw
+		next := p.next
 
-			for i := uint(0) ; i < ks; i ++ {
-				x := POtoWX(i, pt.px, ws)
-				y := POtoWY(i, pt.py, ws)
+		for ni := 1; ni < p_len; ni ++ {
+			ci := ni - 1
+			next_line = raw[ni]
+			new_line := uint64(0)
 
-				sum := w.LifeSumAt(x, y, cz)
-				st := w.Get(x, y, cz)
-				nst := DEAD
+			if prev_line != 0 || curr_line != 0 || next_line != 0 {
+				// TODO: first bit 0x2
 
-				if st == DEAD {
-					if sum == RULE_BORN {
-						nst = LIFE
-						pt.alive ++
+				for bi := uint(1); bi < PageStrideBits - 2; bi ++ {
+					sum := PopCnt(prev_line & (BITS111 << (bi - 1))) +
+						PopCnt(curr_line & (BITS101 << (bi - 1))) +
+						PopCnt(next_line & (BITS111 << (bi - 1)))
+
+					if sum < RULE_LIVE_MIN {
+						continue
+					}
+
+					st := byte(PopCnt(curr_line & (BITS1 << bi)))
+					// fmt.Printf("                                                                 line=%d, pl=%b, cl=%b, nl=%b\n", ci, prev_line, curr_line, next_line)
+					// fmt.Printf("                                                                 line=%d, st=%d, sum=%d, pl=%b, cl=%b, nl=%b\n", ci, st, sum, prev_line & (BITS111 << (bi - 1)), curr_line & (BITS101 << (bi - 1)), next_line & (BITS111 << (bi - 1)))
+
+					if st == DEAD {
+						if sum == RULE_BORN {
+							new_line = new_line | (BITS1 << bi)
+							w.population ++
+						}
+					} else {
+						if sum >= RULE_LIVE_MIN && sum <= RULE_LIVE_MAX {
+							new_line = new_line | (BITS1 << bi)
+							w.population ++
+						}
 					}
 				}
 
-				if st == LIFE {
-					if sum >= RULE_LIVE_MIN && sum <= RULE_LIVE_MAX {
-						nst = LIFE
-						pt.alive ++
-					}
-				}
+				// TODO: last bit 0x2
 
-				w.Set(x, y, nz, nst)
+				next[ci] = new_line
 			}
 
-			// Check page edges (special case when there is no page)
-			w.TryEdgeLines(new, pt.GetAABB())
+			prev_line = curr_line
+			curr_line = next_line
+		}
 
-			return a.(uint64) + uint64(pt.alive)
-		}, w.population).(uint64)     */
+		next_line = 0
+		// TODO: scan last line
+	}
+
+	w.Swap()
+}
+
+func (w *LifeWorld) Swap() {
+	for _, p := range w.v.vm.reserved {
+		p.raw = p.next
+		p.next = nil
+	}
 }
 
 /*

@@ -8,10 +8,10 @@ const (
 	PageSizeWidth = 64
 	PageSizeHeight = 64
 	PageSizeByte = PageSizeWidth * PageSizeHeight // 4096
-	PageStrideByte = 64
+	PageStrideBits = 64
 	PageStridePO2 = 6
 	PageStrideMod = 63 // 0b111111
-	PageStrideWidth = PageSizeWidth / PageStrideByte // 1
+	PageStrideWidth = PageSizeWidth / PageStrideBits // 1
 	PageStrideWidthPO2 = 0
 	PageStrideHeight = PageSizeHeight // 64
 	PageStrideSize = PageStrideWidth * PageStrideHeight // 64
@@ -38,6 +38,7 @@ type Page struct {
 	ViewUtil
 
 	raw []uint64
+	next []uint64
 
 	px, py uint64
 
@@ -59,10 +60,14 @@ func NewVM() *VM {
 	}
 }
 
+func NewPageBuf() []uint64 {
+   return make([]uint64,PageStrideSize, PageStrideSize)
+}
+
 func NewPage() *Page {
 	return &Page{
 		AABB: New00WH(PageSizeWidth, PageSizeHeight),
-		raw: make([]uint64, PageStrideSize, PageStrideSize),
+		raw: NewPageBuf(),
 		px: 0,
 		py: 0,
 	}
