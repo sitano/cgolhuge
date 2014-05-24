@@ -1,7 +1,6 @@
 package main
 
 import (
-	"container/list"
 	"io"
 )
 
@@ -50,13 +49,13 @@ type Page struct {
 }
 
 type VM struct {
-	reserved *list.List
+	reserved []*Page
 }
 
 
 func NewVM() *VM {
 	return &VM{
-		reserved: list.New(),
+		reserved: make([]*Page, 0, 16),
 	}
 }
 
@@ -69,43 +68,42 @@ func NewPage() *Page {
 	}
 }
 
-func (vm *VM) Search(p *Page) *list.Element {
-	for e := vm.reserved.Front(); e != nil; e = e.Next() {
-		if e.Value.(*Page) == p {
-			return e
+func (vm *VM) Search(p *Page) int {
+	for i, pi := range vm.reserved  {
+		if pi == p {
+			return i
 		}
 	}
-	return nil
+	return -1
 }
 
-func (vm *VM) SearchPXY(px uint64, py uint64) *list.Element {
-	for e := vm.reserved.Front(); e != nil; e = e.Next() {
-		p := e.Value.(*Page)
-		if p.px == px && p.py == py {
-			return e
+func (vm *VM) SearchPXY(px uint64, py uint64) int {
+	for i, pi := range vm.reserved  {
+		if pi.px == px && pi.py == py {
+			return i
 		}
 	}
-	return nil
+	return -1
 }
 
 // Take any free page or create one and put it into reserved list
 func (vm *VM) ReservePage() *Page {
 	p := NewPage()
-	vm.reserved.PushBack(p)
+	vm.reserved = append(vm.reserved, p)
 	return p
 }
 
 func (vm *VM) ReclaimPage(p *Page) bool {
-	el := vm.Search(p)
-	if el == nil {
+	i := vm.Search(p)
+	if i < 0 {
 		return false
 	}
-	vm.reserved.Remove(el)
+	vm.reserved[i], vm.reserved = vm.reserved[len(vm.reserved)-1], vm.reserved[:len(vm.reserved)-1]
 	return true
 }
 
 func (vm *VM) Pages() int {
-	return vm.reserved.Len()
+	return len(vm.reserved)
 }
 
 func XtoPX(x uint64) uint64 {
@@ -135,15 +133,10 @@ func (p *Page) Get(x uint64, y uint64) byte {
 }
 
 func (p *Page) Set(x uint64, y uint64, v byte) {
-	// Mask
 	sb := XtoSB(x)
-	mask := ^(uint64(1) << sb)
-	// Unset
 	pi := XYtoPI(x, y)
-	a := p.raw[pi] & mask
 	// Set
-	mask = uint64(v) << sb
-	p.raw[pi] = a | mask
+	p.raw[pi] = (p.raw[pi] & (^(uint64(1) << sb))) | (uint64(v) << sb)
 }
 
 // ViewUtil implementation

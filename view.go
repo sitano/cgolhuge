@@ -37,7 +37,7 @@ type ViewIO struct {
 type WorldView struct {
 	AABB
 	View
-	ViewIO
+	ViewUtil
 
 	vm *VM
 
@@ -201,7 +201,7 @@ func NewWorldView(vm *VM) *WorldView {
 	if vm.Pages() < 1 {
 		vm.ReservePage()
 	}
-	p := vm.reserved.Front().Value.(*Page)
+	p := vm.reserved[0]
 	return &WorldView{
 		AABB: p.GetAABB(),
 		vm: vm,
