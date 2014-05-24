@@ -115,3 +115,19 @@ func (s *Screen) PrintAt(row int, col int, block interface{}) {
 		fmt.Print(string(c))
 	}
 }
+
+func (s *Screen) DisableInputBuffering() {
+	// disable input buffering
+	exec.Command("stty", "-F", "/dev/tty", "cbreak", "min", "1").Run()
+}
+
+func (s *Screen) HideInputChars() {
+	// do not display entered characters on the screen
+	exec.Command("stty", "-F", "/dev/tty", "-echo").Run()
+}
+
+func (s *Screen) ShowInputChars() {
+	// do not display entered characters on the screen
+	exec.Command("stty", "-F", "/dev/tty", "echo").Run()
+	fmt.Println()
+}

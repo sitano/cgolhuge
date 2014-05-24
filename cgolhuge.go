@@ -2,14 +2,15 @@ package main
 
 import (
 	"flag"
-	"bufio"
 	"os"
+	"os/signal"
 	"log"
 	"runtime/pprof"
 	"runtime"
 	"time"
 	"fmt"
 	"strings"
+	"syscall"
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
@@ -31,7 +32,6 @@ func main() {
 	vx:= *viewx
 	vy:= *viewy
 	vp:= w.v.pb.GetAABB()
-	reader := bufio.NewReader(os.Stdin)
 
 	runtime.GC()
 
@@ -52,9 +52,26 @@ func main() {
 	var screen *Screen
 	if ! profiling {
 		screen = NewScreen()
+		screen.DisableInputBuffering()
+		screen.HideInputChars()
+		// Set view port
 		vp = vp.Intersection(NewXYWH(vx, vy, uint64(screen.cols) - 2, uint64(screen.rows) - 2))
+		// Program start
 		start = time.Now()
 	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<- c
+		// sig is a ^C, handle it
+		if (profiling) {
+			pprof.StopCPUProfile()
+		} else {
+			screen.ShowInputChars()
+		}
+		os.Exit(1)
+	}()
 
 	if *loadfile != "" {
 		if strings.HasSuffix(*loadfile, ".rle") {
@@ -78,7 +95,41 @@ func main() {
 				time.Sleep(time.Millisecond * time.Duration(*idle))
 			}
 			if *wait {
-				reader.ReadString('\n')
+				var b []byte = make([]byte, 3)
+				for {
+					os.Stdin.Read(b)
+					if b[0] == 10 {
+						break
+					}
+					if b[0] == 'q' {
+						c <- syscall.SIGINT
+					}
+					if b[0] == 27 {
+						if b[1] == 91 {
+							switch b[2] {
+							case 65: /* up */
+								if vy > 0 {
+									vy --
+								}
+							case 66: /* down */
+								vy ++
+							case 67: /* right */
+								vx ++
+							case 68: /* left */
+								if vx > 0 {
+									vx --
+								}
+							}
+							// New view port
+							vp = w.v.pb.GetAABB().Intersection(NewXYWH(vx, vy, uint64(screen.cols) - 2, uint64(screen.rows) - 2))
+							// Redraw
+							screen.Reset()
+							screen.PrintAt(1, 1, fmt.Sprintf("Gen: %d, Pop: %d, VMPages: %d, Elapsed: %.1fs, Avg/Step: %d ns, VP: %v",
+									w.Generation(), w.Population(), w.v.vm.Pages(), time.Now().Sub(start).Seconds(), stepEnd - stepStart, vp))
+							screen.PrintAt(2, 1, w.Print(vp))
+						}
+					}
+				}
 			}
 			stepStart = time.Now().UnixNano()
 		}
