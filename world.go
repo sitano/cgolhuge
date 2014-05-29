@@ -12,10 +12,17 @@ const (
 	RULE_LIVE_MAX = 3
 	RULE_BORN = 3
 
+	BITS10  = uint64(0x2) // 0b10
+
 	BITS1   = uint64(0x1) //   0b1
 	BITS11  = uint64(0x3) //  0b11
 	BITS111 = uint64(0x7) // 0b111
 	BITS101 = uint64(0x5) // 0b101
+
+	BITS01  = BITS1
+
+	PageStrideLast2 = PageStrideBits - 2
+	PageStrideLast1 = PageStrideBits - 1
 )
 
 type World interface {
@@ -92,22 +99,42 @@ func (w *LifeWorld) Step() {
 			next_line = raw[ni]
 			new_line := uint64(0)
 
+			// Process 1 stride line if there are anything to process
 			if prev_line != 0 || curr_line != 0 || next_line != 0 {
-				// TODO: first bit 0x2
+				// First 2 bits with mask 0b011
+				// Test: go build && ./cgolhuge -load pattern/glider_gun.lif -lx 17 -ly 5 -wait
+				sum := PopCnt((prev_line & BITS11) +
+					(curr_line & BITS10) << 4 +
+					(next_line & BITS11) << 8)
 
-				for bi := uint(1); bi < PageStrideBits - 2; bi ++ {
+				if sum >= RULE_LIVE_MIN {
+					st := byte(curr_line & BITS1)
+
+					if st == DEAD {
+						if sum == RULE_BORN {
+							new_line = new_line | BITS1
+							w.population ++
+						}
+					} else {
+						if sum >= RULE_LIVE_MIN && sum <= RULE_LIVE_MAX {
+							new_line = new_line | BITS1
+							w.population ++
+						}
+					}
+				}
+
+				// Middle bits
+				for bi := uint(1); bi < PageStrideBits - 1; bi ++ {
 					bi_1 := bi - 1
 					sum := PopCnt((prev_line & (BITS111 << bi_1)) >> bi_1 +
-							((curr_line & (BITS101 << bi_1)) >> bi_1) << 3 +
-							((next_line & (BITS111 << bi_1)) >> bi_1) << 6)
+							((curr_line & (BITS101 << bi_1)) >> bi_1) << 4 +
+							((next_line & (BITS111 << bi_1)) >> bi_1) << 8)
 
 					if sum < RULE_LIVE_MIN {
 						continue
 					}
 
 					st := byte(PopCnt(curr_line & (BITS1 << bi)))
-					// fmt.Printf("                                                                 line=%d, pl=%b, cl=%b, nl=%b\n", ci, prev_line, curr_line, next_line)
-					// fmt.Printf("                                                                 line=%d, st=%d, sum=%d, pl=%b, cl=%b, nl=%b\n", ci, st, sum, prev_line & (BITS111 << (bi - 1)), curr_line & (BITS101 << (bi - 1)), next_line & (BITS111 << (bi - 1)))
 
 					if st == DEAD {
 						if sum == RULE_BORN {
@@ -122,7 +149,27 @@ func (w *LifeWorld) Step() {
 					}
 				}
 
-				// TODO: last bit 0x2
+				// Last 2 bits with mask 0b011
+				// Test: go build && ./cgolhuge -load pattern/glider_gun.lif -lx 45 -ly 5 -wait
+				sum = PopCnt(((prev_line >> PageStrideLast2) & BITS11) +
+					((curr_line >> PageStrideLast2) & BITS01) << 4 +
+					((next_line >> PageStrideLast2) & BITS11) << 8)
+
+				if sum >= RULE_LIVE_MIN {
+					st := byte(curr_line >> PageStrideLast1)
+
+					if st == DEAD {
+						if sum == RULE_BORN {
+							new_line = new_line | (BITS1 << PageStrideLast1)
+							w.population ++
+						}
+					} else {
+						if sum >= RULE_LIVE_MIN && sum <= RULE_LIVE_MAX {
+							new_line = new_line | (BITS1 << PageStrideLast1)
+							w.population ++
+						}
+					}
+				}
 
 				next[ci] = new_line
 			}
