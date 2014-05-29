@@ -108,7 +108,7 @@ func (w *LifeWorld) Step() {
 			}
 
 			// Process 1 stride line if there are anything to process
-			if prev_line != 0 || curr_line != 0 || next_line != 0 {
+			if prev_line | curr_line | next_line != 0 {
 				// First 2 bits with mask 0b011
 				// Test: go build && ./cgolhuge -load pattern/glider_gun.lif -lx 17 -ly 5 -wait
 				sum := PopCnt((prev_line & BITS11) +
