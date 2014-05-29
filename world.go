@@ -94,10 +94,18 @@ func (w *LifeWorld) Step() {
 		raw := p.raw
 		next := p.next
 
-		for ni := 1; ni < p_len; ni ++ {
-			ci := ni - 1
-			next_line = raw[ni]
+		ci := 0
+		last_line := false
+		for !last_line {
 			new_line := uint64(0)
+
+			if ci < p_len - 1 {
+				next_line = raw[ci + 1]
+			} else {
+				// Last next line on the next page
+				next_line = 0
+				last_line = true
+			}
 
 			// Process 1 stride line if there are anything to process
 			if prev_line != 0 || curr_line != 0 || next_line != 0 {
@@ -176,10 +184,8 @@ func (w *LifeWorld) Step() {
 
 			prev_line = curr_line
 			curr_line = next_line
+			ci ++
 		}
-
-		next_line = 0
-		// TODO: scan last line
 	}
 
 	w.Swap()
