@@ -1,36 +1,15 @@
-/*
-Based on work of Volker Poplawski, 2013 (https://github.com/volkerp/goquadtree)
-*/
 package main
-/*
-import "container/list"
 
-// Number of entries until a quad is split
 const MAX_ENTRIES_PER_TILE = 16
-
-// Maximum depth of quad-tree (not counting the root node)
 const MAX_LEVELS = 64
 
-// AABB orientation inside tree
-const (
-	_TOPRIGHT    = 0
-	_TOPLEFT     = 1
-	_BOTTOMLEFT  = 2
-	_BOTTOMRIGHT = 3
-)
-
-// QuadTree expects its values to implement the QuadElement interface.
-type QuadElement interface {
-	GetAABB() AABB
-}
-
-// quad-tile / node of the quad-tree
 type QuadTile struct {
 	AABB
 
-	level    int           // level this tile is at. root is level 0
-	contents []QuadElement // values stored in this tile
-	childs   [4]*QuadTile  // sub-tiles. none or four.
+	level    int
+	contents []*Page
+
+	nw, ne, sw, se *QuadTile
 }
 
 type QuadTree struct {
@@ -40,144 +19,199 @@ type QuadTree struct {
 	count uint64
 }
 
-// Constructs an empty quad-tree
-// bbox specifies the extends of the coordinate system.
 func NewQuadTree(bbox AABB) QuadTree {
 	qt := QuadTree{ bbox, QuadTile{AABB:bbox}, 0 }
 	return qt
 }
 
-// Adds a value to the quad-tree by trickle down from the root node.
-func (qb *QuadTree) Add(v QuadElement) {
+func (qb *QuadTree) AddTo(px uint64, py uint64, v *Page) {
+	v.px = px
+	v.py = py
+	v.MinX = px * PageSizeWidth
+	v.MinY = py * PageSizeHeight
+	v.MaxX = v.MinX + (PageSizeWidth - 1)
+	v.MaxY = v.MinY + (PageSizeHeight - 1)
 	qb.root.add(v)
 	qb.count ++
 }
 
-func (qb *QuadTree) Count() uint64 {
-	return qb.count
+func (qb *QuadTree) RemoveAt(px uint64, py uint64) bool {
+	if qb.root.remove(px, py) {
+		qb.count--
+		return true
+	}
+	return false
 }
 
-func (tile *QuadTile) Contents() []QuadElement {
-	return tile.contents
+func (qb *QuadTree) QueryBox(bbox AABB) (values []*Page) {
+	return qb.root.queryBox(bbox, values)
 }
 
-func (tile *QuadTile) Childs() [4]*QuadTile {
-	return tile.childs
+func (qb *QuadTree) QueryPoint(px uint64, py uint64) *Page {
+	return qb.root.queryPoint(px, py)
 }
 
-// Returns all values which intersect the query box
-func (qb *QuadTree) Query(bbox AABB) (values []QuadElement) {
-	return qb.root.query(bbox, values)
+func (qb *QuadTree) Reduce(f func(p *Page)) {
+	qb.root.reduce(f)
 }
 
-func (qb *QuadTree) Reduce(f func(a interface{}, t QuadElement) interface{}, v interface{}) interface{} {
-	return qb.root.reduce(f, v)
-}
-
-func (tile *QuadTile) add(v QuadElement) {
+func (qt *QuadTile) add(v *Page) {
 	// look for sub-tile directly below this tile to accomodate value.
-	if i := tile.findChildIndex(v.GetAABB()); i < 0 {
+	if c := qt.getChild(v.px, v.py); c == nil {
 		// no suitable sub-tile for value found.
 		// either this tile has no childs or
 		// value does not fit in any subtile.
 		// store value at this level.
-		tile.contents = append(tile.contents, v)
+		qt.contents = append(qt.contents, v)
 
 		// tile is split if exceeds it max number of entries and
 		// has not childs already and max tree depth for this sub-tree not reached.
-		if len(tile.contents) > MAX_ENTRIES_PER_TILE && tile.childs[_TOPRIGHT] == nil && tile.level < MAX_LEVELS {
-			tile.split()
+		if len(qt.contents) > MAX_ENTRIES_PER_TILE && qt.nw == nil && qt.level < MAX_LEVELS {
+			qt.split()
 		}
 	} else {
 		// suitable sub-tile for value found at index i.
 		// recursivly add value.
-		tile.childs[i].add(v)
+		c.add(v)
 	}
 }
 
-
-// return child index for AABB
-// returns -1 if quad has no children or AABB does not fit into any child
-func (tile *QuadTile) findChildIndex(bbox AABB) int {
-	if tile.childs[_TOPRIGHT] == nil {
-		return -1
+func (qt *QuadTile) getChild(px uint64, py uint64) *QuadTile {
+	if qt.nw == nil {
+		return nil
 	}
 
-	for i, child := range tile.childs {
-		if child.Contains(bbox) {
-			return i
-		}
+	if qt.nw.ContainsPoint(px, py) {
+		return qt.nw
 	}
 
-	return -1
+	if qt.ne.ContainsPoint(px, py) {
+		return qt.ne
+	}
+
+	if qt.sw.ContainsPoint(px, py) {
+		return qt.sw
+	}
+
+	if qt.se.ContainsPoint(px, py) {
+		return qt.se
+	}
+
+	return nil
 }
-
 
 // create four child quads.
 // distribute contents of this tiles on newly created childs.
-func (tile *QuadTile) split() {
-	mx := tile.MaxX/2.0 + tile.MinX/2.0
-	my := tile.MaxY/2.0 + tile.MinY/2.0
+func (qt *QuadTile) split() {
+	mx := qt.MaxX/2.0 + qt.MinX/2.0
+	my := qt.MaxY/2.0 + qt.MinY/2.0
 
-	tile.childs[_TOPRIGHT]    = &QuadTile{ AABB:NewAABB(mx, tile.MaxX, my, tile.MaxY), level:tile.level+1 }
-	tile.childs[_TOPLEFT]     = &QuadTile{ AABB:NewAABB(tile.MinX, mx, my, tile.MaxY), level:tile.level+1 }
-	tile.childs[_BOTTOMLEFT]  = &QuadTile{ AABB:NewAABB(tile.MinX, mx, tile.MinY, my), level:tile.level+1 }
-	tile.childs[_BOTTOMRIGHT] = &QuadTile{ AABB:NewAABB(mx, tile.MaxX, tile.MinY, my), level:tile.level+1 }
+	qt.se = &QuadTile{ AABB:NewAABB(mx, qt.MaxX, my, qt.MaxY), level:qt.level+1 }
+	qt.sw = &QuadTile{ AABB:NewAABB(qt.MinX, mx, my, qt.MaxY), level:qt.level+1 }
+	qt.nw = &QuadTile{ AABB:NewAABB(qt.MinX, mx, qt.MinY, my), level:qt.level+1 }
+	qt.ne = &QuadTile{ AABB:NewAABB(mx, qt.MaxX, qt.MinY, my), level:qt.level+1 }
 
 	// copy values to temporary slice
-	var contentsBak []QuadElement
-	contentsBak = append(contentsBak, tile.contents...)
+	contentsBak := append([]*Page{}, qt.contents...)
 
 	// clear values on this tile
-	tile.contents = []QuadElement{}
+	qt.contents = []*Page{}
 
 	// reinsert from temporary slice
 	for _,v := range contentsBak {
-		tile.add(v)
+		qt.add(v)
 	}
 }
 
-
-func (tile *QuadTile) query(qbox AABB, ret []QuadElement) []QuadElement {
-	// end recursion if this tile does not intersect the query range
-	if ! tile.Intersects(qbox) {
+func (qt *QuadTile) queryBox(qbox AABB, ret []*Page) []*Page {
+	if ! qt.Intersects(qbox) {
 		return ret
 	}
 
-	// return candidates at this tile
-	for _, v := range tile.contents {
-		if qbox.Intersects(v.GetAABB()) {
+	for _, v := range qt.contents {
+		if qbox.ContainsPoint(v.px, v.py) {
 			ret = append(ret, v)
 		}
 	}
 
-	// recurse into childs (if any)
-	if tile.childs[_TOPRIGHT] != nil {
-		for _, child := range tile.childs {
-			ret = child.query(qbox, ret)
-		}
+	if qt.nw != nil {
+		ret = qt.nw.queryBox(qbox, ret)
+		ret = qt.ne.queryBox(qbox, ret)
+		ret = qt.sw.queryBox(qbox, ret)
+		ret = qt.se.queryBox(qbox, ret)
 	}
 
 	return ret
 }
 
-func (qt *QuadTile) reduce(f func(a interface{}, t QuadElement) interface{}, v interface{}) interface{} {
-	stack := list.New()
-	stack.PushFront(qt)
-	for stack.Len() > 0 {
-		tile := stack.Front().Value.(*QuadTile)
-		stack.Remove(stack.Front())
+func (qt *QuadTile) queryPoint(px uint64, py uint64) *Page {
+	if ! qt.ContainsPoint(px, py) {
+		return nil
+	}
 
-		for _, t := range tile.contents {
-			v = f(v, t)
-		}
-
-		if tile.childs[_TOPRIGHT] != nil {
-			for _, child := range tile.childs {
-				stack.PushFront(child)
-			}
+	for _, v := range qt.contents {
+		if v.px == px && v.py == py {
+			return v
 		}
 	}
-	return v
+
+	if qt.nw != nil {
+		if v := qt.nw.queryPoint(px, py) ; v != nil {
+			return v
+		}
+		if v := qt.ne.queryPoint(px, py) ; v != nil {
+			return v
+		}
+		if v := qt.sw.queryPoint(px, py) ; v != nil {
+			return v
+		}
+		if v := qt.se.queryPoint(px, py) ; v != nil {
+			return v
+		}
+	}
+
+	return nil
 }
-*/
+
+func (qt *QuadTile) remove(px uint64, py uint64) bool {
+	if ! qt.ContainsPoint(px, py) {
+		return false
+	}
+
+	for i, v := range qt.contents {
+		if v.px == px && v.py == py {
+			qt.contents[i], qt.contents = qt.contents[len(qt.contents)-1], qt.contents[:len(qt.contents)-1]
+			return true
+		}
+	}
+
+	if qt.nw != nil {
+		if qt.nw.remove(px, py) {
+			return true
+		}
+		if qt.ne.remove(px, py) {
+			return true
+		}
+		if qt.sw.remove(px, py) {
+			return true
+		}
+		if qt.se.remove(px, py) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (qt *QuadTile) reduce(f func(p *Page)) {
+	for _, t := range qt.contents {
+		f(t)
+	}
+
+	if qt.nw != nil {
+		qt.nw.reduce(f)
+		qt.ne.reduce(f)
+		qt.sw.reduce(f)
+		qt.se.reduce(f)
+	}
+}

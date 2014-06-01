@@ -100,18 +100,20 @@ See cpu profile for this at pprof.
 Engine:
 
 ```
-- VM to hold page tiles themselves
-- Is it faster to alloc new 4-16kb page or to memset0 reclaimed one?
-- Is it faster to read and sum [4kb]int or [16kb]byte?
-- Reuse go compiler opt flags (http://dave.cheney.net/2012/10/07/notes-on-exploring-the-compiler-flags-in-the-go-compiler-suite)
+Version 1:
 
-- Const page size and bits count and mask
-- Const world size
++ VM to hold page tiles themselves
++ Is it faster to alloc new 4-16kb page or to memset0 reclaimed one?
++ Is it faster to read and sum [4kb]int or [16kb]byte?
+= Reuse go compiler opt flags (http://dave.cheney.net/2012/10/07/notes-on-exploring-the-compiler-flags-in-the-go-compiler-suite)
+
++ Const page size and bits count and mask
++ Const world size
 - Store pages in a tree in page coords
-- Eliminate all math.Max/Min checks
-- Than fix contains Point method =
-- Eliminate any alloc during step
-- Eliminate z layers in a View api (use new pages for processing)
++ Eliminate all math.Max/Min checks
++ Than fix contains Point method =
++ Eliminate any alloc during step
++ Eliminate z layers in a View api (use new pages for processing)
 - Efficient raw page stepping:
     - Hold rect of life on page (to process only small amount of bytes)
     - Accumulate changes count per page processing, if it is zero, skip it.
@@ -121,16 +123,11 @@ Engine:
     - If edges have life, check only ness adjacent pages
     - Use only fixed count of query pages from tree per step to check adj pages (cache them)
     - Do not process DEAD cells, process only LIFE inside active RECT inside PAGE
-```
 
-API:
+Version 2:
 
-```
-- View: Reader, Writer
-- World is a View
-- RLE, LIF
-- MvXY by any value, use MASK and SHIFT to calc page
-- PrintPattern to any pos
-- MirrorXY any rect
-- GetPoints + InRect
+- Skip stride middle bits by 16 based on or of all 3 lines
+- MemSet with C ext instead of realloc new buf on step
+- Do not set old life - set dead instead (to reduce bits ops)
+
 ```
