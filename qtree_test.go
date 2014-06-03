@@ -1,32 +1,27 @@
-/*
-Based on work of Volker Poplawski, 2013 (https://github.com/volkerp/goquadtree)
-*/
 package main
-/*
+
+import "math"
 import "math/rand"
 import "testing"
 import _ "fmt"
 
 // Generates n AABBes in the range of frame with average width and height avgSize
-func randomAABBes(n int, frame AABB, avgSize int64) []AABB {
-	ret := make([]AABB, n)
+func randomPages(n int, frame AABB) []*Page {
+	ret := make([]*Page, n)
 
 	for i := 0; i < len(ret); i++ {
-		w := int64(rand.NormFloat64() * float64(avgSize))
-		h := int64(rand.NormFloat64() * float64(avgSize))
-		x := int64(rand.Float64() * float64(frame.SizeX()) + float64(frame.MinX))
-		y := int64(rand.Float64() * float64(frame.SizeY()) + float64(frame.MinY))
-		ret[i] = NewAABB(x, Min(frame.MaxX, x+w), y, Min(frame.MaxY, y+h))
+		ret[i] = NewPage()
+		ret[i].px = uint64(rand.Float64() * float64(frame.SizeX()) + float64(frame.MinX))
+		ret[i].py = uint64(rand.Float64() * float64(frame.SizeY()) + float64(frame.MinY))
 	}
 
 	return ret
 }
 
-
 // Returns all elements of data which intersect query
-func queryLinear(data []AABB, query AABB) (ret []QuadElement) {
+func queryLinear(data []*Page, query *Page) (ret []*Page) {
 	for _, v := range data {
-		if query.Intersects(v.GetAABB()) {
+		if compareQuadElement(v, query) {
 			ret = append(ret, v)
 		}
 	}
@@ -34,17 +29,11 @@ func queryLinear(data []AABB, query AABB) (ret []QuadElement) {
 	return ret
 }
 
-
-func compareQuadElement(v1, v2 QuadElement) bool {
-	b1 := v1.GetAABB()
-	b2 := v2.GetAABB()
-
-	return b1.MinX == b2.MinX && b1.MaxX == b2.MaxX &&
-		b1.MinY == b2.MinY && b2.MaxY == b2.MaxY
+func compareQuadElement(v1, v2 *Page) bool {
+	return v1.px == v2.px && v1.py == v2.py
 }
 
-
-func lookupResults(r1, r2 []QuadElement) int {
+func lookupResults(r1, r2 []*Page) int {
 	for i, v1 := range r1 {
 		found := false
 
@@ -63,24 +52,25 @@ func lookupResults(r1, r2 []QuadElement) int {
 	return -1
 }
 
-// World-space extends from -1000..1000 in X and Y direction
-var world AABB = NewAABB(-1000, 1000, -1000, 1000)
-
+// World-space extends from 0..1000 in X and Y direction
+var world AABB = NewAABB(0, 0, 1000, 1000)
+var worldMax AABB = NewAABB(0, 0, math.MaxUint64, math.MaxUint64)
 
 // Compary correctness of quad-tree results vs simple look-up on set of random rectangles
-func TestQuadTreeRects(t *testing.T) {
-	var rects []AABB = randomAABBes(100, world, 5)
+/*func TestQuadTreeRects(t *testing.T) {
+	var rects []*Page = randomPages(100, world)
 	qt := NewQuadTree(world)
 
 	for _, v := range rects {
 		qt.Add(v)
 	}
 
-	queries := randomAABBes(100, world, 10)
+	queries := randomPages(100, world)
 
 	for _, q := range queries {
 		r1 := queryLinear(rects, q)
-		r2 := qt.Query(q)
+		r2 := qt.QueryBox(q.AABB)
+		r3 := qt.QueryPoint(q.px, q.py)
 
 		if len(r1) != len(r2) {
 			t.Errorf("r1 and r2 differ: %v   %v\n", r1, r2)
@@ -94,51 +84,124 @@ func TestQuadTreeRects(t *testing.T) {
 			t.Errorf("%v was not returned by brute-force\n", r2[i])
 		}
 
+		if r3 == nil {
+			t.Errorf("%v was not returned by QT\n", r3)
+		}
 	}
 }
-
+  */
 
 // Compary correctness of quad-tree results vs simple look-up on set of random points
-func TestQuadTreePoints(t *testing.T) {
-	var points []AABB = randomAABBes(100, world, 0)
+func TestQuadTreePointsSmall(t *testing.T) {
+	var points []*Page = randomPages(100, world)
 	qt := NewQuadTree(world)
 
 	for _, v := range points {
 		qt.Add(v)
 	}
 
-	queries := randomAABBes(100, world, 10)
-
-	for _, q := range queries {
+	for _, q := range points {
 		r1 := queryLinear(points, q)
-		r2 := qt.Query(q)
+		r2 := qt.QueryBox(NewWAABB4PAABB(q.AABB))
+		r3 := qt.QueryPoint(q.px, q.py)
 
 		if len(r1) != len(r2) {
-			t.Errorf("r1 and r2 differ: %v   %v\n", r1, r2)
+			t.Errorf("q for r1 and r2 differ: %v    %v   %v\n", q, r1, r2)
 		}
 
 		if i := lookupResults(r1, r2); i != -1 {
-			t.Errorf("%v was not returned by QT\n", r1[i])
+			t.Errorf("r1[i] = %v was not returned by QT\n", r1[i])
 		}
 
 		if i := lookupResults(r2, r1); i != -1 {
-			t.Errorf("%v was not returned by brute-force\n", r2[i])
+			t.Errorf("r2[i] = %v was not returned by brute-force\n", r2[i])
 		}
 
+		if r3 == nil {
+			t.Errorf("r3 = %v was not returned by QT\n", r3)
+		}
+	}
+
+	for _, q := range points {
+		if !qt.RemoveAt(q.px, q.py) {
+			t.Errorf("Failed to remove %v\n", q)
+		}
+		r3 := qt.QueryPoint(q.px, q.py)
+		if r3 != nil {
+			t.Errorf("r3 = %v was not returned by QT\n", r3)
+		}
+	}
+
+	for _, v := range points {
+		qt.Add(v)
+	}
+
+	for _, q := range points {
+		r1 := queryLinear(points, q)
+		r2 := qt.QueryBox(NewWAABB4PAABB(q.AABB))
+		r3 := qt.QueryPoint(q.px, q.py)
+
+		if len(r1) != len(r2) {
+			t.Errorf("q for r1 and r2 differ: %v    %v   %v\n", q, r1, r2)
+		}
+
+		if i := lookupResults(r1, r2); i != -1 {
+			t.Errorf("r1[i] = %v was not returned by QT\n", r1[i])
+		}
+
+		if i := lookupResults(r2, r1); i != -1 {
+			t.Errorf("r2[i] = %v was not returned by brute-force\n", r2[i])
+		}
+
+		if r3 == nil {
+			t.Errorf("r3 = %v was not returned by QT\n", r3)
+		}
+	}
+}
+
+func TestQuadTreePointsMax(t *testing.T) {
+	var points []*Page = randomPages(1000, worldMax)
+	qt := NewQuadTree(worldMax)
+
+	for _, v := range points {
+		qt.Add(v)
+	}
+
+	for _, q := range points {
+		r1 := queryLinear(points, q)
+		r2 := qt.QueryBox(NewWAABB4PAABB(q.AABB))
+		r3 := qt.QueryPoint(q.px, q.py)
+
+		if len(r1) != len(r2) {
+			t.Errorf("q for r1 and r2 differ: %v    %v   %v\n", q, r1, r2)
+		}
+
+		if i := lookupResults(r1, r2); i != -1 {
+			t.Errorf("r1[i] = %v was not returned by QT\n", r1[i])
+		}
+
+		if i := lookupResults(r2, r1); i != -1 {
+			t.Errorf("r2[i] = %v was not returned by brute-force\n", r2[i])
+		}
+
+		if r3 == nil {
+			t.Errorf("r3 = %v was not returned by QT\n", r3)
+		}
 	}
 }
 
 func TestQuadTreeReduce(t *testing.T) {
-	var rects []AABB = randomAABBes(100, world, 5)
+	var rects []*Page = randomPages(100, world)
 	qt := NewQuadTree(world)
 
 	for _, v := range rects {
 		qt.Add(v)
 	}
 
-	count := qt.Reduce(func(c interface{}, e QuadElement) interface{} {
-		return c.(int) + 1
-	}, 0).(int)
+	count := 0
+	qt.Reduce(func(p *Page) {
+		count += 1
+	})
 
 	if count != 100 {
 		t.Error("Reduce wrong abount 100 inner rects != ", count)
@@ -147,17 +210,17 @@ func TestQuadTreeReduce(t *testing.T) {
 
 
 // A set of 10 million randomly distributed rectangles of avg size 5
-var boxes10M []AABB
+var boxes10M []*Page
 
 func BenchmarkInitBoxes(b *testing.B) {
-	boxes10M = randomAABBes(10*1000*1000, world, 5)
+	boxes10M = randomPages(10*1000*1000, world)
 }
 
 // Benchmark insertion into quad-tree
 func BenchmarkInsert(b *testing.B) {
 	b.StopTimer()
 
-	var values []AABB = randomAABBes(b.N, world, 5)
+	var values []*Page = randomPages(b.N, world)
 	qt := NewQuadTree(world)
 
 	b.StartTimer()
@@ -178,11 +241,11 @@ func BenchmarkRectsQuadtree(b *testing.B) {
 		qt.Add(v)
 	}
 
-	queries := randomAABBes(b.N, world, 10)
+	queries := randomPages(b.N, world)
 
 	b.StartTimer()
 	for _, q := range queries {
-		qt.Query(q)
+		qt.QueryPoint(q.px, q.py)
 	}
 }
 
@@ -191,7 +254,7 @@ func BenchmarkRectsQuadtree(b *testing.B) {
 func BenchmarkRectsLinear(b *testing.B) {
 	b.StopTimer()
 	rand.Seed(1)
-	queries := randomAABBes(b.N, world, 10)
+	queries := randomPages(b.N, world)
 
 	b.StartTimer()
 	for _, q := range queries {
@@ -200,10 +263,10 @@ func BenchmarkRectsLinear(b *testing.B) {
 }
 
 // A set of 10 million randomly distributed points
-var points10M []AABB
+var points10M []*Page
 
 func BenchmarkInitPoints(b *testing.B) {
-	points10M = randomAABBes(10*1000*1000, world, 0)
+	points10M = randomPages(10*1000*1000, world)
 }
 
 // Benchmark quad-tree on set of points
@@ -216,11 +279,11 @@ func BenchmarkPointsQuadtree(b *testing.B) {
 		qt.Add(v)
 	}
 
-	queries := randomAABBes(b.N, world, 10)
+	queries := randomPages(b.N, world)
 
 	b.StartTimer()
 	for _, q := range queries {
-		qt.Query(q)
+		qt.QueryPoint(q.px, q.py)
 	}
 }
 
@@ -229,11 +292,10 @@ func BenchmarkPointsQuadtree(b *testing.B) {
 func BenchmarkPointsLinear(b *testing.B) {
 	b.StopTimer()
 	rand.Seed(1)
-	queries := randomAABBes(b.N, world, 10)
+	queries := randomPages(b.N, world)
 
 	b.StartTimer()
 	for _, q := range queries {
 		queryLinear(points10M, q)
 	}
 }
-*/

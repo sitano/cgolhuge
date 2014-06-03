@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"fmt"
 )
 
 const (
@@ -71,6 +72,10 @@ func NewPage() *Page {
 		px: 0,
 		py: 0,
 	}
+}
+
+func (p *Page) String() string {
+	return fmt.Sprintf("(Page %d, %d / %v)", p.px, p.py, p.AABB)
 }
 
 func (vm *VM) Search(p *Page) int {

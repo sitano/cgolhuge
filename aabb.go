@@ -30,7 +30,7 @@ func NewAABB(xa, ya, xb, yb uint64) AABB {
 }
 
 func NewXYWH(x, y, w, h uint64) AABB {
-	return AABB{ x, y, x + w - 1, y + h - 1 }
+	return AABB{ x, y, x + (w - 1), y + (h - 1) }
 }
 
 func New00WH(w, h uint64) AABB {
