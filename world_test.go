@@ -3,7 +3,7 @@ package main
 import "testing"
 
 func BenchmarkWorldGliderGun(t *testing.B) {
-	w := NewLifeWorld(NewWorldView(NewVM()))
+	w := NewLifeWorldMax()
 	LoadLIF(w, 20, 10, "pattern/glider_gun.lif")
 	t.ResetTimer()
 	for i := 0; i < t.N; i ++ {
