@@ -37,20 +37,59 @@ func (qb *QuadTree) Add(v *Page) {
 	qb.AddTo(v, v.px, v.py)
 }
 
-func (qb *QuadTree) AddTo(v *Page, px uint64, py uint64) {
-	v.px = px
-	v.py = py
-	v.AABB = NewWAABB4PXY(px, py)
-	qb.root.add(v)
+func (qb *QuadTree) AddTo(p *Page, px uint64, py uint64) {
+	// Update coords
+	p.px = px
+	p.py = py
+	p.AABB = NewAABBPXY2W(px, py)
+	// Add
+	qb.root.add(p)
+	// Update stats
 	qb.count ++
+	// Update my adjacent pages
+	if px > qb.MinX {
+		if py > qb.MinY {
+			p.ap_nw = qb.QueryPoint(px - 1, py - 1)
+		}
+		p.ap_w = qb.QueryPoint(px - 1, py)
+		if py < qb.MaxY {
+			p.ap_sw = qb.QueryPoint(px - 1, py + 1)
+		}
+	}
+	if py > qb.MinY {
+		p.ap_n = qb.QueryPoint(px, py - 1)
+	}
+	if py < qb.MaxY {
+		p.ap_s = qb.QueryPoint(px, py + 1)
+	}
+	if px < qb.MaxX {
+		if py > qb.MinY {
+			p.ap_ne = qb.QueryPoint(px + 1, py - 1)
+		}
+		p.ap_e = qb.QueryPoint(px + 1, py)
+		if py < qb.MaxY {
+			p.ap_se = qb.QueryPoint(px + 1, py + 1)
+		}
+	}
+	// Update adjacent adjacent pages
+	if p.ap_nw != nil { p.ap_nw.ap_se = p }
+	if p.ap_w != nil { p.ap_w.ap_e = p }
+	if p.ap_sw != nil { p.ap_sw.ap_ne = p }
+
+	if p.ap_n != nil { p.ap_n.ap_s = p }
+	if p.ap_s != nil { p.ap_s.ap_n = p }
+
+	if p.ap_ne != nil { p.ap_ne.ap_sw = p }
+	if p.ap_e != nil { p.ap_e.ap_w = p }
+	if p.ap_se != nil { p.ap_se.ap_nw = p }
 }
 
-func NewWAABB4PXY(px uint64, py uint64) AABB {
+func NewAABBPXY2W(px uint64, py uint64) AABB {
 	return NewXYWH(px * PageSizeWidth, py * PageSizeHeight, PageSizeWidth, PageSizeHeight)
 }
 
-func NewWAABB4PAABB(pbb AABB) AABB {
-	return NewXYWH(pbb.MinX >> PageStridePO2, pbb.MinY >> PageStridePO2, 1, 1)
+func NewAABBW2P(wbox AABB) AABB {
+	return NewXYWH(wbox.MinX >> PageStridePO2, wbox.MinY >> PageStridePO2, wbox.MaxX >> PageStridePO2, wbox.MaxY >> PageStridePO2)
 }
 
 func WXY2PXY(x uint64, y uint64) (px uint64, py uint64) {
@@ -59,12 +98,37 @@ func WXY2PXY(x uint64, y uint64) (px uint64, py uint64) {
 	return
 }
 
-func (qb *QuadTree) RemoveAt(px uint64, py uint64) bool {
-	if qb.root.remove(px, py) {
-		qb.count--
-		return true
+func (qb *QuadTree) RemoveAt(px uint64, py uint64) *Page {
+	// Remove
+	v := qb.root.remove(px, py)
+	if v == nil {
+		return nil
 	}
-	return false
+	// Update stats
+	qb.count--
+	// Update adjacent adjacent pages
+	if v.ap_nw != nil { v.ap_nw.ap_se = nil }
+	if v.ap_w != nil { v.ap_w.ap_e = nil }
+	if v.ap_sw != nil { v.ap_sw.ap_ne = nil }
+
+	if v.ap_n != nil { v.ap_n.ap_s = nil }
+	if v.ap_s != nil { v.ap_s.ap_n = nil }
+
+	if v.ap_ne != nil { v.ap_ne.ap_sw = nil }
+	if v.ap_e != nil { v.ap_e.ap_w = nil }
+	if v.ap_se != nil { v.ap_se.ap_nw = nil }
+	// Update my adjacent pages
+	v.ap_nw = nil
+	v.ap_w = nil
+	v.ap_sw = nil
+
+	v.ap_n = nil
+	v.ap_s = nil
+
+	v.ap_ne = nil
+	v.ap_e = nil
+	v.ap_se = nil
+	return v
 }
 
 func (qb *QuadTree) QueryBox(bbox AABB) (values []*Page) {
@@ -79,14 +143,14 @@ func (qb *QuadTree) Reduce(f func(p *Page)) {
 	qb.root.reduce(f)
 }
 
-func (qt *QuadTile) add(v *Page) {
+func (qt *QuadTile) add(p *Page) {
 	// look for sub-tile directly below this tile to accomodate value.
-	if c := qt.getChild(v.px, v.py); c == nil {
+	if c := qt.getChild(p.px, p.py); c == nil {
 		// no suitable sub-tile for value found.
 		// either this tile has no childs or
 		// value does not fit in any subtile.
 		// store value at this level.
-		qt.contents = append(qt.contents, v)
+		qt.contents = append(qt.contents, p)
 
 		// tile is split if exceeds it max number of entries and
 		// has not childs already and max tree depth for this sub-tree not reached.
@@ -96,7 +160,7 @@ func (qt *QuadTile) add(v *Page) {
 	} else {
 		// suitable sub-tile for value found at index i.
 		// recursivly add value.
-		c.add(v)
+		c.add(p)
 	}
 }
 
@@ -195,34 +259,34 @@ func (qt *QuadTile) queryPoint(px uint64, py uint64) *Page {
 	return nil
 }
 
-func (qt *QuadTile) remove(px uint64, py uint64) bool {
+func (qt *QuadTile) remove(px uint64, py uint64) *Page {
 	if ! qt.ContainsPoint(px, py) {
-		return false
+		return nil
 	}
 
-	for i, v := range qt.contents {
-		if v.px == px && v.py == py {
+	for i, p := range qt.contents {
+		if p.px == px && p.py == py {
 			qt.contents[i], qt.contents = qt.contents[len(qt.contents)-1], qt.contents[:len(qt.contents)-1]
-			return true
+			return p
 		}
 	}
 
 	if qt.nw != nil {
-		if qt.nw.remove(px, py) {
-			return true
+		if p := qt.nw.remove(px, py) ; p != nil {
+			return p
 		}
-		if qt.ne.remove(px, py) {
-			return true
+		if p := qt.ne.remove(px, py) ; p != nil {
+			return p
 		}
-		if qt.sw.remove(px, py) {
-			return true
+		if p := qt.sw.remove(px, py) ; p != nil {
+			return p
 		}
-		if qt.se.remove(px, py) {
-			return true
+		if p := qt.se.remove(px, py) ; p != nil {
+			return p
 		}
 	}
 
-	return false
+	return nil
 }
 
 func (qt *QuadTile) reduce(f func(p *Page)) {

@@ -43,7 +43,11 @@ type Page struct {
 
 	px, py uint64
 
-	// TODO: adjacent pages
+	// Adjacent Pages
+	ap_nw, ap_n, ap_ne *Page
+	ap_w,        ap_e  *Page
+	ap_sw, ap_s, ap_se *Page
+
 	// TODO: rect of life presence
 	// TODO: changes since last step
 	// TODO: life total count in page

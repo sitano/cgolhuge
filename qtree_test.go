@@ -102,7 +102,7 @@ func TestQuadTreePointsSmall(t *testing.T) {
 
 	for _, q := range points {
 		r1 := queryLinear(points, q)
-		r2 := qt.QueryBox(NewWAABB4PAABB(q.AABB))
+		r2 := qt.QueryBox(NewAABBW2P(q.AABB))
 		r3 := qt.QueryPoint(q.px, q.py)
 
 		if len(r1) != len(r2) {
@@ -123,7 +123,7 @@ func TestQuadTreePointsSmall(t *testing.T) {
 	}
 
 	for _, q := range points {
-		if !qt.RemoveAt(q.px, q.py) {
+		if qt.RemoveAt(q.px, q.py) == nil {
 			t.Errorf("Failed to remove %v\n", q)
 		}
 		r3 := qt.QueryPoint(q.px, q.py)
@@ -138,7 +138,7 @@ func TestQuadTreePointsSmall(t *testing.T) {
 
 	for _, q := range points {
 		r1 := queryLinear(points, q)
-		r2 := qt.QueryBox(NewWAABB4PAABB(q.AABB))
+		r2 := qt.QueryBox(NewAABBW2P(q.AABB))
 		r3 := qt.QueryPoint(q.px, q.py)
 
 		if len(r1) != len(r2) {
@@ -169,7 +169,7 @@ func TestQuadTreePointsMax(t *testing.T) {
 
 	for _, q := range points {
 		r1 := queryLinear(points, q)
-		r2 := qt.QueryBox(NewWAABB4PAABB(q.AABB))
+		r2 := qt.QueryBox(NewAABBW2P(q.AABB))
 		r3 := qt.QueryPoint(q.px, q.py)
 
 		if len(r1) != len(r2) {
@@ -212,28 +212,27 @@ func TestQuadTreeReduce(t *testing.T) {
 // A set of 10 million randomly distributed rectangles of avg size 5
 var boxes10M []*Page
 
-func BenchmarkInitBoxes(b *testing.B) {
+func BenchmarkTreeInitBoxes(b *testing.B) {
 	boxes10M = randomPages(10*1000*1000, world)
 }
 
 // Benchmark insertion into quad-tree
-func BenchmarkInsert(b *testing.B) {
-	b.StopTimer()
-
+func BenchmarkTreeInsert(b *testing.B) {
 	var values []*Page = randomPages(b.N, world)
 	qt := NewQuadTree(world)
 
-	b.StartTimer()
+	b.ResetTimer()
 
-	for _, v := range values {
-		qt.Add(v)
+	for i := 0; i < b.N; i ++ {
+		for _, v := range values {
+			qt.Add(v)
+		}
 	}
 }
 
 
 // Benchmark quad-tree on set of rectangles
-func BenchmarkRectsQuadtree(b *testing.B) {
-	b.StopTimer()
+func BenchmarkTreeRectsQuadtree(b *testing.B) {
 	rand.Seed(1)
 	qt := NewQuadTree(world)
 
@@ -243,35 +242,37 @@ func BenchmarkRectsQuadtree(b *testing.B) {
 
 	queries := randomPages(b.N, world)
 
-	b.StartTimer()
-	for _, q := range queries {
-		qt.QueryPoint(q.px, q.py)
+	b.ResetTimer()
+	for i := 0; i < b.N; i ++ {
+		for _, q := range queries {
+			qt.QueryPoint(q.px, q.py)
+		}
 	}
 }
 
 
 // Benchmark simple look up on set of rectangles
-func BenchmarkRectsLinear(b *testing.B) {
-	b.StopTimer()
+func BenchmarkTreeRectsLinear(b *testing.B) {
 	rand.Seed(1)
 	queries := randomPages(b.N, world)
 
-	b.StartTimer()
-	for _, q := range queries {
-		queryLinear(boxes10M, q)
+	b.ResetTimer()
+	for i := 0; i < b.N; i ++ {
+		for _, q := range queries {
+			queryLinear(boxes10M, q)
+		}
 	}
 }
 
 // A set of 10 million randomly distributed points
 var points10M []*Page
 
-func BenchmarkInitPoints(b *testing.B) {
+func BenchmarkTreePointsInit(b *testing.B) {
 	points10M = randomPages(10*1000*1000, world)
 }
 
 // Benchmark quad-tree on set of points
-func BenchmarkPointsQuadtree(b *testing.B) {
-	b.StopTimer()
+func BenchmarkTreePointsQuadtree(b *testing.B) {
 	rand.Seed(1)
 	qt := NewQuadTree(world)
 
@@ -281,21 +282,23 @@ func BenchmarkPointsQuadtree(b *testing.B) {
 
 	queries := randomPages(b.N, world)
 
-	b.StartTimer()
-	for _, q := range queries {
-		qt.QueryPoint(q.px, q.py)
+	b.ResetTimer()
+	for i := 0; i < b.N; i ++ {
+		for _, q := range queries {
+			qt.QueryPoint(q.px, q.py)
+		}
 	}
 }
 
-
 // Benchmark simple look-up on set of points
-func BenchmarkPointsLinear(b *testing.B) {
-	b.StopTimer()
+func BenchmarkTreePointsLinear(b *testing.B) {
 	rand.Seed(1)
 	queries := randomPages(b.N, world)
 
-	b.StartTimer()
-	for _, q := range queries {
-		queryLinear(points10M, q)
+	b.ResetTimer()
+	for i := 0; i < b.N; i ++ {
+		for _, q := range queries {
+			queryLinear(points10M, q)
+		}
 	}
 }

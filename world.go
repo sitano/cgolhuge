@@ -56,8 +56,8 @@ func NewLifeWorld(v *WorldView) *LifeWorld {
 	}
 }
 
-func NewLifeWorldWH(bbox AABB) *LifeWorld {
-	return NewLifeWorld(NewWorldView(NewVM(), bbox))
+func NewLifeWorldWH(wbox AABB) *LifeWorld {
+	return NewLifeWorld(NewWorldView(NewVM(), wbox))
 }
 
 func NewLifeWorldMax() *LifeWorld {

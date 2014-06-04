@@ -195,11 +195,11 @@ func (v *ViewIO) Write(p []byte) (n int, err error) {
 	return ii, v.err
 }
 
-func NewWorldView(vm *VM, bbox AABB) *WorldView {
+func NewWorldView(vm *VM, wbox AABB) *WorldView {
 	return &WorldView{
-		AABB: bbox,
+		AABB: wbox,
 		vm: vm,
-		pb: NewQuadTree(bbox),
+		pb: NewQuadTree(NewAABBW2P(wbox)),
 	}
 }
 
