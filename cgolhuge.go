@@ -28,10 +28,10 @@ var profiling bool
 func main() {
 	flag.Parse()
 
-	w := NewLifeWorld(NewWorldView(NewVM()))
+	w := NewLifeWorldMax()
 	vx:= *viewx
 	vy:= *viewy
-	vp:= w.v.pb.GetAABB()
+	vp:= w.v.pb.AABB
 
 	runtime.GC()
 
@@ -121,7 +121,7 @@ func main() {
 								}
 							}
 							// New view port
-							vp = w.v.pb.GetAABB().Intersection(NewXYWH(vx, vy, uint64(screen.cols) - 2, uint64(screen.rows) - 2))
+							vp = w.v.pb.AABB.Intersection(NewXYWH(vx, vy, uint64(screen.cols) - 2, uint64(screen.rows) - 2))
 							// Redraw
 							screen.Reset()
 							screen.PrintAt(1, 1, fmt.Sprintf("Gen: %d, Pop: %d, VMPages: %d, Elapsed: %.1fs, Avg/Step: %d ns, VP: %v",

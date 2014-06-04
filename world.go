@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"math"
 )
 
 const (
@@ -55,14 +56,13 @@ func NewLifeWorld(v *WorldView) *LifeWorld {
 	}
 }
 
-/*
-func NewLifeWorldXY(bbox AABB) LifeWorld {
-	vm := NewVM(KSIZE_16K)
-	pb := NewPageTree(bbox, vm.wsize)
-	wv := NewWorldView(&vm, &pb)
-	return NewLifeWorld(&wv)
+func NewLifeWorldWH(bbox AABB) *LifeWorld {
+	return NewLifeWorld(NewWorldView(NewVM(), bbox))
 }
-*/
+
+func NewLifeWorldMax() *LifeWorld {
+	return NewLifeWorldWH(New00WH(math.MaxUint64, math.MaxUint64))
+}
 
 func (w *LifeWorld) Generation() uint64 {
 	return w.generation

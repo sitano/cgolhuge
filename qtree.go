@@ -21,12 +21,11 @@ type QuadTree struct {
 	count uint64
 }
 
-func NewQuadTree(bbox AABB) QuadTree {
-	qt := QuadTree{ bbox, &QuadTile{AABB:bbox}, 0 }
-	return qt
+func NewQuadTree(bbox AABB) *QuadTree {
+	return &QuadTree{ bbox, &QuadTile{AABB:bbox}, 0 }
 }
 
-func (qb QuadTree) String() string {
+func (qb *QuadTree) String() string {
 	return fmt.Sprintf("(Tree %v)", qb.root)
 }
 
@@ -52,6 +51,12 @@ func NewWAABB4PXY(px uint64, py uint64) AABB {
 
 func NewWAABB4PAABB(pbb AABB) AABB {
 	return NewXYWH(pbb.MinX >> PageStridePO2, pbb.MinY >> PageStridePO2, 1, 1)
+}
+
+func WXY2PXY(x uint64, y uint64) (px uint64, py uint64) {
+	px = x >> PageStridePO2
+	py = y >> PageStridePO2
+	return
 }
 
 func (qb *QuadTree) RemoveAt(px uint64, py uint64) bool {

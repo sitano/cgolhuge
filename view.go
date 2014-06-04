@@ -40,9 +40,7 @@ type WorldView struct {
 	ViewUtil
 
 	vm *VM
-
-	pb *Page
-	// pb *PageTree
+	pb *QuadTree
 }
 
 func Print(v View, b AABB) string {
@@ -197,15 +195,11 @@ func (v *ViewIO) Write(p []byte) (n int, err error) {
 	return ii, v.err
 }
 
-func NewWorldView(vm *VM) *WorldView {
-	if vm.Pages() < 1 {
-		vm.ReservePage()
-	}
-	p := vm.reserved[0]
+func NewWorldView(vm *VM, bbox AABB) *WorldView {
 	return &WorldView{
-		AABB: p.GetAABB(),
+		AABB: bbox,
 		vm: vm,
-		pb: p,
+		pb: NewQuadTree(bbox),
 	}
 }
 
@@ -216,11 +210,20 @@ func (wv *WorldView) GetAABB() AABB {
 }
 
 func (wv *WorldView) Get(x uint64, y uint64) byte {
-	return wv.pb.Get(x, y)
+	px, py := WXY2PXY(x, y)
+	p := wv.pb.QueryPoint(px, py)
+	if p == nil { return DEAD }
+	return p.Get(x - p.MinX, y - p.MinY)
 }
 
 func (wv *WorldView) Set(x uint64, y uint64, v byte) {
-	wv.pb.Set(x, y, v)
+	px, py := WXY2PXY(x, y)
+	p := wv.pb.QueryPoint(px, py)
+	if p == nil {
+	    p = wv.vm.ReservePage()
+		wv.pb.AddTo(p, px, py)
+	}
+	p.Set(x - p.MinX, y - p.MinY, v)
 }
 
 // ViewUtil implementation
