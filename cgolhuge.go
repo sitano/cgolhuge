@@ -20,6 +20,8 @@ var loadx = flag.Uint64("lx", uint64(0), "Load into x position")
 var loady = flag.Uint64("ly", uint64(0), "Load into y position")
 var viewx = flag.Uint64("vx", uint64(0), "View port top-left x position")
 var viewy = flag.Uint64("vy", uint64(0), "View port top-left y position")
+var vieww = flag.Uint64("vw", uint64(70), "View port top-left width position")
+var viewh = flag.Uint64("vh", uint64(70), "View port top-left height position")
 var idle = flag.Int64("idle", int64(0), "Idle ms between steps")
 var wait = flag.Bool("wait", false, "Wait <ENTER> for every step")
 var start time.Time
@@ -31,7 +33,7 @@ func main() {
 	w := NewLifeWorldMax()
 	vx:= *viewx
 	vy:= *viewy
-	vp:= w.v.pb.AABB
+	vp:= w.v.AABB
 
 	runtime.GC()
 
@@ -55,7 +57,9 @@ func main() {
 		screen.DisableInputBuffering()
 		screen.HideInputChars()
 		// Set view port
-		vp = vp.Intersection(NewXYWH(vx, vy, uint64(screen.cols) - 2, uint64(screen.rows) - 2))
+		vp = vp.Intersection(NewXYWH(vx, vy,
+			Max(1, Min(uint64(screen.cols) - 2, *vieww)),
+			Max(1, Min(uint64(screen.rows) - 2, *viewh))))
 		// Program start
 		start = time.Now()
 	}
@@ -121,7 +125,9 @@ func main() {
 								}
 							}
 							// New view port
-							vp = w.v.pb.AABB.Intersection(NewXYWH(vx, vy, uint64(screen.cols) - 2, uint64(screen.rows) - 2))
+							vp = w.v.AABB.Intersection(NewXYWH(vx, vy,
+								Max(1, Min(uint64(screen.cols) - 2, *vieww)),
+								Max(1, Min(uint64(screen.rows) - 2, *viewh))))
 							// Redraw
 							screen.Reset()
 							screen.PrintAt(1, 1, fmt.Sprintf("Gen: %d, Pop: %d, VMPages: %d, Elapsed: %.1fs, Avg/Step: %d ns, VP: %v",
