@@ -55,7 +55,13 @@ func Print(v View, b AABB) string {
 		for ix := bbview.MinX; ix <= bbview.MaxX; ix ++ {
 			val := v.Get(ix, iy)
 			if val == 0 {
-				r += "."
+				if ix & PageStrideMod == 0 {
+					r += "o"
+				} else if iy % PageStrideHeight == 0 {
+					r += "o"
+				} else {
+					r += "."
+				}
 			} else {
 				r += "@"
 			}
