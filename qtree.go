@@ -89,7 +89,7 @@ func NewAABBPXY2W(px uint64, py uint64) AABB {
 }
 
 func NewAABBW2P(wbox AABB) AABB {
-	return NewXYWH(wbox.MinX >> PageStridePO2, wbox.MinY >> PageStridePO2, wbox.MaxX >> PageStridePO2, wbox.MaxY >> PageStridePO2)
+	return NewAABB(wbox.MinX >> PageStridePO2, wbox.MinY >> PageStridePO2, wbox.MaxX >> PageStridePO2, wbox.MaxY >> PageStridePO2)
 }
 
 func WXY2PXY(x uint64, y uint64) (px uint64, py uint64) {

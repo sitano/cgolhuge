@@ -208,6 +208,101 @@ func TestQuadTreeReduce(t *testing.T) {
 	}
 }
 
+func fillQuadTreeWithPageMatrix(qt *QuadTree, ps [][]*Page, x uint64, y uint64) {
+	for r, ps1 := range ps {
+		for c, ps2 := range ps1 {
+			if ps2 != nil {
+				qt.AddTo(ps2, x + uint64(c - 1), y + uint64(r - 1))
+			}
+		}
+	}
+}
+
+func validateQuadTreePageRelations(t *testing.T, ps [][]*Page) {
+	for r, ps1 := range ps {
+		for c, ps2 := range ps1 {
+			if ps2 != nil {
+				if c > 0 {
+					if ps2.ap_w != ps1[c - 1] {
+						t.Errorf("Error for (%d, %d) of %v/w, have %v, wait %v\n", c - 1, r - 1, ps2, ps2.ap_w, ps1[c - 1])
+					}
+					if r > 0 {
+						if ps2.ap_nw != ps[r - 1][c - 1] {
+							t.Errorf("Error for (%d, %d) of %v/nw, have %v, wait %v\n", c - 1, r - 1, ps2, ps2.ap_nw, ps[r - 1][c - 1])
+						}
+					}
+					if r < len(ps) - 1 {
+						if ps2.ap_sw != ps[r + 1][c - 1] {
+							t.Errorf("Error for (%d, %d) of %v/w, have %v, wait %v\n", c - 1, r - 1, ps2, ps2.ap_sw, ps[r + 1][c - 1])
+						}
+					}
+				}
+				if c < len(ps1) - 1 {
+					if ps2.ap_e != ps1[c + 1] {
+						t.Errorf("Error for (%d, %d) of %v/w, have %v, wait %v\n", c - 1, r - 1, ps2, ps2.ap_e, ps1[c + 1])
+					}
+					if r > 0 {
+						if ps2.ap_ne != ps[r - 1][c + 1] {
+							t.Errorf("Error for (%d, %d) of %v/nw, have %v, wait %v\n", c - 1, r - 1, ps2, ps2.ap_ne, ps[r - 1][c + 1])
+						}
+					}
+					if r < len(ps) - 1 {
+						if ps2.ap_se != ps[r + 1][c + 1] {
+							t.Errorf("Error for (%d, %d) of %v/w, have %v, wait %v\n", c - 1, r - 1, ps2, ps2.ap_se, ps[r + 1][c + 1])
+						}
+					}
+				}
+				if r > 0 {
+					if ps2.ap_n != ps[r - 1][c] {
+						t.Errorf("Error for (%d, %d) of %v/nw, have %v, wait %v\n", c - 1, r - 1, ps2, ps2.ap_n, ps[r - 1][c])
+					}
+				}
+				if r < len(ps) - 1 {
+					if ps2.ap_s != ps[r + 1][c] {
+						t.Errorf("Error for (%d, %d) of %v/w, have %v, wait %v\n", c - 1, r - 1, ps2, ps2.ap_s, ps[r + 1][c])
+					}
+				}
+			}
+		}
+	}
+}
+
+func TestQuadTreeAdjacent(t *testing.T) {
+	qt := NewQuadTree(world)
+	vm := NewVM()
+	// Init matrix for 0, 0
+	ps := [][]*Page{
+		{ nil, nil, nil },
+		{ nil, vm.ReservePage(), vm.ReservePage() },
+		{ nil, vm.ReservePage(), vm.ReservePage() },
+	}
+	// Fill 0, 0
+	fillQuadTreeWithPageMatrix(qt, ps, 0, 0)
+	// Check 0, 0
+	validateQuadTreePageRelations(t, ps)
+
+	// Init matrix for MaxX, MaxY
+	ps = [][]*Page{
+		{ vm.ReservePage(), vm.ReservePage(), nil },
+		{ vm.ReservePage(), vm.ReservePage(), nil },
+		{ nil, nil, nil },
+	}
+	// Fill
+	fillQuadTreeWithPageMatrix(qt, ps, world.MaxX, world.MaxY)
+	// Check MaxX, MaxY
+	validateQuadTreePageRelations(t, ps)
+
+	// Init matrix for center
+	ps = [][]*Page{
+		{ vm.ReservePage(), vm.ReservePage(), vm.ReservePage() },
+		{ vm.ReservePage(), vm.ReservePage(), vm.ReservePage() },
+		{ vm.ReservePage(), vm.ReservePage(), vm.ReservePage() },
+	}
+	// Fill
+	fillQuadTreeWithPageMatrix(qt, ps, world.MinX + world.SizeX() / 2, world.MinY + world.SizeY() / 2)
+	// Check MaxX, MaxY
+	validateQuadTreePageRelations(t, ps)
+}
 
 // A set of 10 million randomly distributed rectangles of avg size 5
 var boxes10M []*Page
@@ -223,10 +318,8 @@ func BenchmarkTreeInsert(b *testing.B) {
 
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i ++ {
-		for _, v := range values {
-			qt.Add(v)
-		}
+	for _, v := range values {
+		qt.Add(v)
 	}
 }
 
@@ -243,10 +336,8 @@ func BenchmarkTreeRectsQuadtree(b *testing.B) {
 	queries := randomPages(b.N, world)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i ++ {
-		for _, q := range queries {
-			qt.QueryPoint(q.px, q.py)
-		}
+	for _, q := range queries {
+		qt.QueryPoint(q.px, q.py)
 	}
 }
 
@@ -257,10 +348,8 @@ func BenchmarkTreeRectsLinear(b *testing.B) {
 	queries := randomPages(b.N, world)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i ++ {
-		for _, q := range queries {
-			queryLinear(boxes10M, q)
-		}
+	for _, q := range queries {
+		queryLinear(boxes10M, q)
 	}
 }
 
@@ -268,7 +357,7 @@ func BenchmarkTreeRectsLinear(b *testing.B) {
 var points10M []*Page
 
 func BenchmarkTreePointsInit(b *testing.B) {
-	points10M = randomPages(10*1000*1000, world)
+	points10M = randomPages(1000*1000, world)
 }
 
 // Benchmark quad-tree on set of points
@@ -283,10 +372,8 @@ func BenchmarkTreePointsQuadtree(b *testing.B) {
 	queries := randomPages(b.N, world)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i ++ {
-		for _, q := range queries {
-			qt.QueryPoint(q.px, q.py)
-		}
+	for _, q := range queries {
+		qt.QueryPoint(q.px, q.py)
 	}
 }
 
@@ -296,9 +383,7 @@ func BenchmarkTreePointsLinear(b *testing.B) {
 	queries := randomPages(b.N, world)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i ++ {
-		for _, q := range queries {
-			queryLinear(points10M, q)
-		}
+	for _, q := range queries {
+		queryLinear(points10M, q)
 	}
 }
