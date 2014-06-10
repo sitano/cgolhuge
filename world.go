@@ -86,9 +86,45 @@ func (w *LifeWorld) Step() {
 
 	p := w.v.vm.reserved[0]
 	p_len := len(p.raw)
+
+	ap_nw := p.ap_nw
+	ap_n  := p.ap_n
+	ap_ne := p.ap_ne
+	ap_w  := p.ap_w
+	ap_e  := p.ap_e
+	ap_sw := p.ap_sw
+	ap_s  := p.ap_s
+	ap_se := p.ap_se
+
+	prev_w_line := uint64(0)
 	prev_line := uint64(0)
+	prev_e_line := uint64(0)
+
+	if ap_nw != nil {
+		prev_w_line = ap_nw.raw[PageStrideHeight - 1]
+	}
+	if ap_n != nil {
+		prev_line = ap_n.raw[PageStrideHeight - 1]
+	}
+	if ap_ne != nil {
+		prev_e_line = ap_ne.raw[PageStrideHeight - 1]
+	}
+
+	curr_w_line := uint64(0)
 	curr_line := p.raw[0]
+	curr_e_line := uint64(0)
+
+	if ap_w != nil {
+		curr_w_line = ap_w.raw[0]
+	}
+	if ap_e != nil {
+		curr_e_line = ap_e.raw[0]
+	}
+
+	next_w_line := uint64(0)
 	next_line := uint64(0)
+	next_e_line := uint64(0)
+
 	for _, p = range w.v.vm.reserved {
 		p.next = NewPageBuf()
 		raw := p.raw
@@ -101,18 +137,42 @@ func (w *LifeWorld) Step() {
 
 			if ci < p_len - 1 {
 				next_line = raw[ci + 1]
+
+				if ap_w != nil {
+					next_w_line = ap_w.raw[ci + 1]
+				}
+				if ap_e != nil {
+					next_e_line = ap_e.raw[ci + 1]
+				}
 			} else {
 				// Last next line on the next page
 				next_line = 0
+
+				if ap_sw != nil {
+					next_w_line = ap_sw.raw[0]
+				}
+				if ap_s != nil {
+					next_line = ap_s.raw[0]
+				}
+				if ap_se != nil {
+					next_e_line = ap_se.raw[0]
+				}
+
 				last_line = true
 			}
 
 			// Process 1 stride line if there are anything to process
 			if prev_line | curr_line | next_line != 0 {
 				{
-					// First 2 bits with mask 0b011
+					// First 2 bits with mask 0b011 (west edge)
 					// Test: go build && ./cgolhuge -load pattern/glider_gun.lif -lx 17 -ly 5 -wait
-					sum := PopCnt((prev_line & BITS11) << 8 | (curr_line & BITS10) << 4 | (next_line & BITS11))
+					sum := PopCnt(
+							(prev_line & BITS11) |
+							(curr_line & BITS10) << 4 |
+							(next_line & BITS11) << 8 |
+							(prev_w_line >> PageStrideLast1) << 12 |
+							(curr_w_line >> PageStrideLast1) << 16 |
+							(next_w_line >> PageStrideLast1) << 20 )
 
 					if sum >= RULE_LIVE_MIN {
 						st := byte(curr_line & BITS1)
@@ -162,11 +222,15 @@ func (w *LifeWorld) Step() {
 				}
 
 				{
-					// Last 2 bits with mask 0b011
+					// Last 2 bits with mask 0b011 (east edge)
 					// Test: go build && ./cgolhuge -load pattern/glider_gun.lif -lx 45 -ly 5 -wait
-					sum := PopCnt(((prev_line >> PageStrideLast2) & BITS11) << 8 |
-						((curr_line >> PageStrideLast2) & BITS01) << 4 |
-						((next_line >> PageStrideLast2) & BITS11))
+					sum := PopCnt(
+								((prev_line >> PageStrideLast2) & BITS11) |
+								((curr_line >> PageStrideLast2) & BITS01) << 4 |
+								((next_line >> PageStrideLast2) & BITS11) << 8 |
+								(prev_e_line & BITS1) << 12 |
+								(curr_e_line & BITS1) << 16 |
+								(next_e_line & BITS1) << 20 )
 
 					if sum >= RULE_LIVE_MIN {
 						st := byte(curr_line >> PageStrideLast1)
@@ -188,8 +252,14 @@ func (w *LifeWorld) Step() {
 				next[ci] = new_line
 			}
 
+			prev_w_line = curr_w_line
 			prev_line = curr_line
+			prev_e_line = curr_e_line
+
+			curr_w_line = next_w_line
 			curr_line = next_line
+			curr_e_line = next_e_line
+
 			ci ++
 		}
 	}
