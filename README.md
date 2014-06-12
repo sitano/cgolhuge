@@ -39,6 +39,24 @@ $ make release
 
 ```
 go build && ./cgolhuge -load ./pattern/glider_gun.lif -lx 20 -ly 20 -idle 100
+go build && ./cgolhuge -load pattern/glider_gun.lif -lx 45 -ly 5
+go build && ./cgolhuge -load pattern/glider_gun.lif -lx 45 -ly 5 -wait
+```
+
+## Flags
+
+```
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+var memprofile = flag.String("memprofile", "", "write memory profile to this file")
+var loadfile = flag.String("load", "", "Load RLE/LIF file into world")
+var loadx = flag.Uint64("lx", uint64(0), "Load into x position")
+var loady = flag.Uint64("ly", uint64(0), "Load into y position")
+var viewx = flag.Uint64("vx", uint64(0), "View port top-left x position")
+var viewy = flag.Uint64("vy", uint64(0), "View port top-left y position")
+var vieww = flag.Uint64("vw", uint64(70), "View port top-left width position")
+var viewh = flag.Uint64("vh", uint64(70), "View port top-left height position")
+var idle = flag.Int64("idle", int64(0), "Idle ms between steps")
+var wait = flag.Bool("wait", false, "Wait <ENTER><UDLR> for every step")
 ```
 
 ## Available solutions to big world problem
