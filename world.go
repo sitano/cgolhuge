@@ -84,58 +84,59 @@ func (w *LifeWorld) Step() {
 		return
 	}
 
-	p := w.v.vm.reserved[0]
-	p_len := len(p.raw)
-
-	ap_nw := p.ap_nw
-	ap_n  := p.ap_n
-	ap_ne := p.ap_ne
-	ap_w  := p.ap_w
-	ap_e  := p.ap_e
-	ap_sw := p.ap_sw
-	ap_s  := p.ap_s
-	ap_se := p.ap_se
-
-	prev_w_line := uint64(0)
-	prev_line := uint64(0)
-	prev_e_line := uint64(0)
-
-	if ap_nw != nil {
-		prev_w_line = ap_nw.raw[PageStrideHeight - 1]
-	}
-	if ap_n != nil {
-		prev_line = ap_n.raw[PageStrideHeight - 1]
-	}
-	if ap_ne != nil {
-		prev_e_line = ap_ne.raw[PageStrideHeight - 1]
-	}
-
-	curr_w_line := uint64(0)
-	curr_line := p.raw[0]
-	curr_e_line := uint64(0)
-
-	if ap_w != nil {
-		curr_w_line = ap_w.raw[0]
-	}
-	if ap_e != nil {
-		curr_e_line = ap_e.raw[0]
-	}
-
-	next_w_line := uint64(0)
-	next_line := uint64(0)
-	next_e_line := uint64(0)
-
-	for _, p = range w.v.vm.reserved {
+	// TODO: reclaim pages
+	// TODO: do not allocate next buf if there were no changes
+	for pi := 0; pi < w.v.vm.Pages(); pi ++ {
+		p := w.v.vm.reserved[pi]
 		p.next = NewPageBuf()
+
 		raw := p.raw
 		next := p.next
+
+		ap_nw := p.ap_nw
+		ap_n  := p.ap_n
+		ap_ne := p.ap_ne
+		ap_w  := p.ap_w
+		ap_e  := p.ap_e
+		ap_sw := p.ap_sw
+		ap_s  := p.ap_s
+		ap_se := p.ap_se
+
+		prev_w_line := uint64(0)
+		prev_line := uint64(0)
+		prev_e_line := uint64(0)
+
+		if ap_nw != nil {
+			prev_w_line = ap_nw.raw[PageStrides - 1]
+		}
+		if ap_n != nil {
+			prev_line = ap_n.raw[PageStrides - 1]
+		}
+		if ap_ne != nil {
+			prev_e_line = ap_ne.raw[PageStrides - 1]
+		}
+
+		curr_w_line := uint64(0)
+		curr_line := p.raw[0]
+		curr_e_line := uint64(0)
+
+		if ap_w != nil {
+			curr_w_line = ap_w.raw[0]
+		}
+		if ap_e != nil {
+			curr_e_line = ap_e.raw[0]
+		}
+
+		next_w_line := uint64(0)
+		next_line := uint64(0)
+		next_e_line := uint64(0)
 
 		ci := 0
 		last_line := false
 		for !last_line {
 			new_line := uint64(0)
 
-			if ci < p_len - 1 {
+			if ci < PageStrides - 1 {
 				next_line = raw[ci + 1]
 
 				if ap_w != nil {
@@ -146,7 +147,9 @@ func (w *LifeWorld) Step() {
 				}
 			} else {
 				// Last next line on the next page
+				next_w_line = 0
 				next_line = 0
+				next_e_line = 0
 
 				if ap_sw != nil {
 					next_w_line = ap_sw.raw[0]
@@ -162,95 +165,161 @@ func (w *LifeWorld) Step() {
 			}
 
 			// Process 1 stride line if there are anything to process
-			if prev_line | curr_line | next_line != 0 {
-				{
-					// First 2 bits with mask 0b011 (west edge)
-					// Test: go build && ./cgolhuge -load pattern/glider_gun.lif -lx 17 -ly 5 -wait
-					sum := PopCnt(
-							(prev_line & BITS11) |
-							(curr_line & BITS10) << 4 |
-							(next_line & BITS11) << 8 |
-							(prev_w_line >> PageStrideLast1) << 12 |
-							(curr_w_line >> PageStrideLast1) << 16 |
-							(next_w_line >> PageStrideLast1) << 20 )
+			sum_west :=
+				(prev_w_line >> PageStrideLast1) +
+				(curr_w_line >> PageStrideLast1) +
+				(next_w_line >> PageStrideLast1)
+			sum_middle := prev_line | curr_line | next_line
+			sum_east :=
+				(prev_e_line & BITS1) +
+				(curr_e_line & BITS1) +
+				(next_e_line & BITS1)
 
-					if sum >= RULE_LIVE_MIN {
-						st := byte(curr_line & BITS1)
+			if sum_middle | sum_west != 0 {
+				// First 2 bits with mask 0b011 (west edge)
+				// Test: go build && ./cgolhuge -load pattern/glider_gun.lif -lx 17 -ly 5 -wait
+				sum := sum_west + PopCnt(
+						(prev_line & BITS11) |
+						(curr_line & BITS10) << 4 |
+						(next_line & BITS11) << 8)
 
-						if st == DEAD {
-							if sum == RULE_BORN {
-								new_line |= BITS1
-								w.population ++
-							}
-						} else {
-							if sum <= RULE_LIVE_MAX {
-								new_line |= BITS1
-								w.population ++
-							}
+				if sum >= RULE_LIVE_MIN {
+					st := byte(curr_line & BITS1)
+
+					if st == DEAD {
+						if sum == RULE_BORN {
+							new_line |= BITS1
+							w.population ++
+						}
+					} else {
+						if sum <= RULE_LIVE_MAX {
+							new_line |= BITS1
+							w.population ++
 						}
 					}
-				}
 
-				{
-					// Middle bits
-					pl := prev_line
-					cl := curr_line
-					nl := next_line
-					for bi := uint(1); bi < PageStrideBits - 1; bi ++ {
-						sum := PopCnt((pl & BITS111) << 8 | (cl & BITS101) << 4 | (nl & BITS111))
-
-						if sum >= RULE_LIVE_MIN {
-							st := byte((cl >> 1) & BITS1)
-
-							if st == DEAD {
-								if sum == RULE_BORN {
-									new_line |= BITS1 << bi
-									w.population ++
-								}
-							} else {
-								if sum <= RULE_LIVE_MAX {
-									new_line |= BITS1 << bi
-									w.population ++
-								}
-							}
-						}
-
-						pl >>= 1
-						cl >>= 1
-						nl >>= 1
+					// Outer west edge check
+					if ci == 0 && ap_nw == nil && ap_n != nil && ap_w != nil &&
+						p.px > w.v.pb.MinX && p.py > w.v.pb.MinY &&
+						(prev_line & BITS1) +
+						(curr_line & BITS1) +
+						(curr_w_line >> PageStrideLast1) == RULE_BORN {
+						w.v.Set(p.MinX - 1, p.MinY - 1, DEAD)
+						ap_nw = p.ap_nw
+					}
+					if ap_w == nil &&
+						p.px > w.v.pb.MinX &&
+						(prev_line & BITS1) +
+						(curr_line & BITS1) +
+						(next_line & BITS1) == RULE_BORN {
+						w.v.Set(p.MinX - 1, p.MinY, DEAD)
+						ap_w = p.ap_w
+					}
+					if ci == PageStrides - 1 && ap_sw == nil && ap_s != nil && ap_w != nil &&
+						p.px < w.v.pb.MaxX && p.py < w.v.pb.MaxY &&
+						(curr_line & BITS1) +
+						(next_line & BITS1) +
+						(curr_w_line >> PageStrideLast1) == RULE_BORN {
+						w.v.Set(p.MinX - 1, p.MaxY + 1, DEAD)
+						ap_sw = p.ap_sw
 					}
 				}
-
-				{
-					// Last 2 bits with mask 0b011 (east edge)
-					// Test: go build && ./cgolhuge -load pattern/glider_gun.lif -lx 45 -ly 5 -wait
-					sum := PopCnt(
-								((prev_line >> PageStrideLast2) & BITS11) |
-								((curr_line >> PageStrideLast2) & BITS01) << 4 |
-								((next_line >> PageStrideLast2) & BITS11) << 8 |
-								(prev_e_line & BITS1) << 12 |
-								(curr_e_line & BITS1) << 16 |
-								(next_e_line & BITS1) << 20 )
-
-					if sum >= RULE_LIVE_MIN {
-						st := byte(curr_line >> PageStrideLast1)
-
-						if st == DEAD {
-							if sum == RULE_BORN {
-								new_line |= BITS1 << PageStrideLast1
-								w.population ++
-							}
-						} else {
-							if sum <= RULE_LIVE_MAX {
-								new_line |= BITS1 << PageStrideLast1
-								w.population ++
-							}
-						}
-					}
-				}
-
-				next[ci] = new_line
 			}
+
+			if sum_middle != 0 {
+				// Middle bits
+				pl := prev_line
+				cl := curr_line
+				nl := next_line
+				for bi := uint(1); bi < PageStrideBits - 1; bi ++ {
+					sum := PopCnt((pl & BITS111) << 8 | (cl & BITS101) << 4 | (nl & BITS111))
+
+					if sum >= RULE_LIVE_MIN {
+						st := byte((cl >> 1) & BITS1)
+
+						if st == DEAD {
+							if sum == RULE_BORN {
+								new_line |= BITS1 << bi
+								w.population ++
+							}
+						} else {
+							if sum <= RULE_LIVE_MAX {
+								new_line |= BITS1 << bi
+								w.population ++
+							}
+						}
+					}
+
+					// Outer north / south edge check
+					// Can't inject this under common sum >= condition as middle bit on CL was skipped
+					if ci == 0 && ap_n == nil && p.py > w.v.pb.MinY && PopCnt(cl & BITS111) == RULE_BORN {
+						w.v.Set(p.MinX, p.MinY - 1, DEAD)
+						ap_n = p.ap_n
+					}
+					if ci == PageStrides - 1 && ap_s == nil && p.py < w.v.pb.MaxY && PopCnt(cl & BITS111) == RULE_BORN {
+						w.v.Set(p.MinX, p.MaxY + 1, DEAD)
+						ap_s = p.ap_s
+					}
+
+					// Shift to next point (from west -> east)
+					pl >>= 1
+					cl >>= 1
+					nl >>= 1
+				}
+			}
+
+			if sum_middle | sum_east != 0 {
+				// Last 2 bits with mask 0b011 (east edge)
+				// Test: go build && ./cgolhuge -load pattern/glider_gun.lif -lx 45 -ly 5 -wait
+				sum := sum_east + PopCnt(
+							((prev_line >> PageStrideLast2) & BITS11) |
+							((curr_line >> PageStrideLast2) & BITS01) << 4 |
+							((next_line >> PageStrideLast2) & BITS11) << 8)
+
+				if sum >= RULE_LIVE_MIN {
+					st := byte(curr_line >> PageStrideLast1)
+
+					if st == DEAD {
+						if sum == RULE_BORN {
+							new_line |= BITS1 << PageStrideLast1
+							w.population ++
+						}
+					} else {
+						if sum <= RULE_LIVE_MAX {
+							new_line |= BITS1 << PageStrideLast1
+							w.population ++
+						}
+					}
+
+					// Outer east edge check
+					if ci == 0 && ap_ne == nil && ap_n != nil && ap_e != nil &&
+						p.px < w.v.pb.MaxX && p.py > w.v.pb.MinY &&
+						(prev_line >> PageStrideLast1) +
+						(curr_line >> PageStrideLast1) +
+						(curr_e_line & BITS1) == RULE_BORN {
+						w.v.Set(p.MaxX + 1, p.MinY - 1, DEAD)
+						ap_ne = p.ap_ne
+					}
+					if ap_e == nil &&
+						p.px < w.v.pb.MaxX &&
+						(prev_line >> PageStrideLast1) +
+						(curr_line >> PageStrideLast1) +
+						(next_line >> PageStrideLast1) == RULE_BORN {
+						w.v.Set(p.MaxX + 1, p.MinY, DEAD)
+						ap_e = p.ap_e
+					}
+					if ci == PageStrides - 1 && ap_se == nil && ap_s != nil && ap_e != nil &&
+						p.px < w.v.pb.MaxX && p.py < w.v.pb.MaxY &&
+						(curr_line >> PageStrideLast1) +
+						(next_line >> PageStrideLast1) +
+						(curr_e_line & BITS1) == RULE_BORN {
+						w.v.Set(p.MaxX + 1, p.MaxY + 1, DEAD)
+						ap_se = p.ap_se
+					}
+				}
+			}
+
+			next[ci] = new_line
 
 			prev_w_line = curr_w_line
 			prev_line = curr_line
@@ -273,130 +342,6 @@ func (w *LifeWorld) Swap() {
 		p.next = nil
 	}
 }
-
-/*
-func (w *LifeWorld) Step() {
-	w.generation ++
-	w.population = 0
-	cz := w.Layer()
-	nz := w.NextZLayer()
-	ws := w.v.pb.wsize
-	ks := w.v.vm.ksize
-
-	// Process life
-	w.v.autoReclaim = false
-	new := list.New()
-	w.population = w.v.pb.Reduce(func(a interface{}, pt *PageTile) interface{} {
-		pt.alive = 0
-
-		for i := uint(0) ; i < ks; i ++ {
-			x := POtoWX(i, pt.px, ws)
-			y := POtoWY(i, pt.py, ws)
-
-			sum := w.LifeSumAt(x, y, cz)
-			st := w.Get(x, y, cz)
-			nst := DEAD
-
-			if st == DEAD {
-				if sum == RULE_BORN {
-					nst = LIFE
-					pt.alive ++
-				}
-			}
-
-			if st == LIFE {
-				if sum >= RULE_LIVE_MIN && sum <= RULE_LIVE_MAX {
-					nst = LIFE
-					pt.alive ++
-				}
-			}
-
-			w.Set(x, y, nz, nst)
-		}
-
-		// Check page edges (special case when there is no page)
-		w.TryEdgeLines(new, pt.GetAABB())
-
-		return a.(uint64) + uint64(pt.alive)
-	}, w.population).(uint64)
-
-	// Restore before purge
-	w.v.autoReclaim = true
-
-	// Fill in additional life (egde case)
-	w.population += uint64(new.Len())
-	w.PurgePoints(new, nz)
-
-	// Reclaim memory
-	w.TryReclaim()
-
-	w.z = nz
-}
-
-func (w *LifeWorld) PurgePoints(ll *list.List, z byte) {
-	for ll.Len() > 0 {
-		np := ll.Remove(ll.Front()).([2]int64)
-		w.Set(np[0], np[1], z, LIFE)
-	}
-}
-
-func (w *LifeWorld) TryEdgeLines(ll *list.List, pbb AABB) {
-	maxX := pbb.MaxX - 1
-	maxY := pbb.MaxY - 1
-	if pbb.MaxX == math.MaxInt64 { maxX = math.MaxInt64 }
-	if pbb.MaxY == math.MaxInt64 { maxY = math.MaxInt64 }
-	w.TryEdgePoint(ll, pbb.MinX, pbb.MinY, -1, -1)
-	w.TryEdgePoint(ll, pbb.MinX, maxY,     -1, +1)
-	w.TryEdgePoint(ll, maxX, pbb.MinY,     +1, -1)
-	w.TryEdgePoint(ll, maxX, maxY,         +1, +1)
-	for x := pbb.MinX ; x <= maxX && x >= pbb.MinX; x++ {
-		w.TryEdgePoint(ll, x, pbb.MinY, 0, -1)
-		w.TryEdgePoint(ll, x, maxY, 0, +1)
-	}
-	for y := pbb.MinY ; y <= maxY && y >= pbb.MinY; y++ {
-		w.TryEdgePoint(ll, pbb.MinX, y, -1, 0)
-		w.TryEdgePoint(ll, maxX,     y, +1, 0)
-	}
-}
-
-func (w *LifeWorld) TryEdgePoint(ll *list.List, x int64, y int64, dx int64, dy int64) {
-	gbb := w.v.pb.GetAABB()
-	ws := w.v.vm.wsize
-	tx := MvXY1(x, dx, gbb.MinX, gbb.MaxX)
-	ty := MvXY1(y, dy, gbb.MinY, gbb.MaxY)
-	if w.v.pb.QueryPage(WtoP(tx, ws), WtoP(ty, ws)) == nil {
-		ts := w.v.LifeSumAt(tx, ty, w.Layer())
-		if ts == RULE_BORN {
-			ll.PushBack([2]int64{tx, ty})
-		}
-	}
-}
-
-func (w *LifeWorld) TryReclaim() {
-	w.v.pb.Reduce(func(a interface{}, pt *PageTile) interface{} {
-		if pt.alive == 0 {
-			w.v.TryReclaim(pt)
-		}
-		return nil
-	}, nil)
-}
-
-func (w *LifeWorld) Set(x int64, y int64, z byte, t byte) {
-	w.v.Set(x, y, z, t)
-}
-
-func (w *LifeWorld) Get(x int64, y int64, z byte) byte {
-	return w.v.Get(x, y, z)
-}
-
-func (w *LifeWorld) NextTo(x int64, y int64, z byte, dx int64, dy int64) byte {
-	return w.v.NextTo(x, y, z, dx, dy)
-}
-
-func (w *LifeWorld) LifeSumAt(x int64, y int64, z byte) byte {
-	return w.v.LifeSumAt(x, y, z)
-}
-*/
 
 // View implementation
 

@@ -26,7 +26,7 @@ func TestVM(t *testing.T) {
 
 	if vm.Pages() != 1 { t.Error("Pages 1") }
 	if p1 == nil { t.Error("Reserve failed") }
-	if len(p1.raw) != PageStrideSize { t.Error("Invalid page size") }
+	if len(p1.raw) != PageStrides { t.Error("Invalid page size") }
 
 	vm.ReclaimPage(p1)
 

@@ -8,14 +8,13 @@ import (
 const (
 	PageSizeWidth = 64
 	PageSizeHeight = 64
-	PageSizeByte = PageSizeWidth * PageSizeHeight // 4096
 	PageStrideBits = 64
+	PageSizeByte = (8 * PageSizeWidth / PageStrideBits) * PageSizeHeight // 512
 	PageStridePO2 = 6
 	PageStrideMod = 63 // 0b111111
 	PageStrideWidth = PageSizeWidth / PageStrideBits // 1
 	PageStrideWidthPO2 = 0
-	PageStrideHeight = PageSizeHeight // 64
-	PageStrideSize = PageStrideWidth * PageStrideHeight // 64
+	PageStrides = PageSizeByte / (PageStrideBits / 8)
 )
 
 // Page coordinates
@@ -66,7 +65,7 @@ func NewVM() *VM {
 }
 
 func NewPageBuf() []uint64 {
-   return make([]uint64,PageStrideSize, PageStrideSize)
+   return make([]uint64, PageStrides, PageStrides)
 }
 
 func NewPage() *Page {
